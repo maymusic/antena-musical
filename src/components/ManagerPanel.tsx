@@ -513,6 +513,23 @@ function TracksTab({
     }
   };
 
+  /** Marca o desmarca la pista como «DESTACADA» (etiqueta neón en los reproductores). */
+  const toggleFeatured = async (t: Track) => {
+    const wanted = t.featured ? 0 : 1;
+    setTracks((cur) => cur.map((x) => (x.id === t.id ? { ...x, featured: wanted } : x)));
+    try {
+      await apiCall(`/api/tracks/${t.id}?artistId=${artist.id}`, {
+        method: "PATCH",
+        headers: jsonHeaders,
+        body: j({ featured: wanted }),
+      });
+      notify(wanted ? "«"+t.title+"» destacada ✦" : "Destacada retirada");
+    } catch (error) {
+      notify((error as Error).message);
+      setTracks((cur) => cur.map((x) => (x.id === t.id ? { ...x, featured: t.featured } : x)));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={add} className="border border-inkline bg-coal-2 p-5 space-y-4">
@@ -596,6 +613,20 @@ function TracksTab({
                 </a>
               </span>
               <span className="font-tech text-[10px] text-bone-dim tabular-nums hidden sm:block">≈ {t.durationSec}s</span>
+              {t.featured ? <span className="featured-chip shrink-0">Destacada</span> : null}
+              <button
+                type="button"
+                onClick={() => toggleFeatured(t)}
+                className={`p-1.5 border font-tech text-[9px] tracking-[0.2em] uppercase shrink-0 transition-colors ${
+                  t.featured
+                    ? "border-[var(--st)] text-[var(--st)] bg-black/30"
+                    : "border-inkline text-bone-dim hover:st-border hover:st-text"
+                }`}
+                title={t.featured ? "Quitar la etiqueta DESTACADA" : "Marcar como DESTACADA en tu radio"}
+                aria-pressed={!!t.featured}
+              >
+                ★ Destacar
+              </button>
               <span className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => move(i, -1)}

@@ -164,7 +164,9 @@ export default async function StationPage({ params }: Ctx) {
           <div className="absolute inset-0 bg-gradient-to-b from-coal/70 via-coal/80 to-coal" />
         </div>
 
-        <div className="relative mx-auto max-w-6xl px-4 pt-14 pb-10 md:pt-20 md:pb-14">
+        {/* padding superior extra en móvil para que la barra sticky (h-14)
+            nunca pise el encabezado de la estación */}
+        <div className="relative mx-auto max-w-6xl px-4 pt-24 pb-10 md:pt-20 md:pb-14">
           <Reveal>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-tech text-[10px] tracking-[0.3em] uppercase text-bone/80">
               <span className="flex items-center gap-1.5 px-2 py-1 border border-bone/25 bg-coal/60">
@@ -228,12 +230,9 @@ export default async function StationPage({ params }: Ctx) {
                 </span>
               </div>
             </Reveal>
-            <Reveal delay={160} className="shrink-0 w-full md:w-auto">
-              {/*
-                En el móvil los botones van en columna a todo el ancho.
-                Antes era una fila y se salían de la pantalla: eso recortaba la página.
-              */}
-              <div className="flex flex-col gap-3 w-full md:w-auto">
+            <Reveal delay={160} className="shrink-0">
+              {/* en móvil los botones se apilan a todo lo ancho; en escritorio quedan en columna lateral */}
+              <div className="flex flex-wrap gap-2.5 sm:gap-3 md:flex-col md:flex-nowrap">
                 <a
                   href="#radio"
                   className="inline-flex items-center justify-center gap-2.5 px-7 py-4 st-bg text-coal font-display font-extrabold text-lg hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"

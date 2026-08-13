@@ -271,26 +271,25 @@ export default function LiveRadio({
       <div className="grid lg:grid-cols-[1.45fr_1fr]">
         {/* pantalla */}
         <div className="border-b lg:border-b-0 lg:border-r border-inkline">
-          <div className="relative aspect-video bg-black overflow-hidden">
-            {/*
-              Contenedor de YouTube siempre con tamaño real.
-              Si se crea el player dentro de un nodo con opacity-0, YouTube
-              genera un iframe de 0×0 y la pantalla queda negra permanentemente.
-            */}
-            <div
-              id="antena-central-yt"
-              className="absolute inset-0 w-full h-full"
-              style={{
-                visibility: tuned && current.platform === "youtube" ? "visible" : "hidden",
-              }}
-            />
+          <div className="relative aspect-video bg-black">
+              {/* contenedor persistente de YouTube:
+                  la API sustituye el div interior por su iframe, así que el
+                  tamaño lo manda .yt-screen (el contenedor) — sin esto el video
+                  se veía negro aunque el audio sonara */}
+              <div
+                className={`yt-screen transition-opacity duration-500 ${
+                  tuned && current.platform === "youtube" ? "opacity-100 z-10" : "opacity-0 -z-10 pointer-events-none"
+                }`}
+              >
+                <div id="antena-central-yt" />
+              </div>
 
             {tuned && current.platform !== "youtube" && (
               <iframe
                 key={current.trackId}
                 title={`${current.title} — ${current.platform}`}
                 src={getEmbedUrl(current.platform, current.kind, current.externalId, true) ?? ""}
-                className="absolute inset-0 w-full h-full z-10"
+                className="absolute inset-0 w-full h-full"
                 style={{ border: 0 }}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               />
@@ -337,6 +336,7 @@ export default function LiveRadio({
               <div className="flex items-center gap-2 min-w-0">
                 <PlatformChip platform={current.platform} />
                 <p className="truncate font-display font-bold text-sm md:text-base">{current.title}</p>
+                {current.featured ? <span className="featured-chip shrink-0">Destacada</span> : null}
               </div>
             </div>
             <Link
@@ -416,7 +416,10 @@ export default function LiveRadio({
                   <span className="font-tech text-[10px] text-bone-dim w-5 shrink-0 tabular-nums">{i + 1}</span>
                   <PlatformChip platform={slot.platform} className="w-4 h-4 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
                   <span className="flex-1 min-w-0">
-                    <span className="block text-sm truncate group-hover:text-bone transition-colors">{slot.title}</span>
+                    <span className="block text-sm truncate group-hover:text-bone transition-colors">
+                      {slot.title}
+                      {slot.featured ? <span className="featured-chip ml-2">Destacada</span> : null}
+                    </span>
                     <span className="block font-tech text-[9px] tracking-widest uppercase text-bone-dim truncate">
                       {slot.artistName}
                     </span>

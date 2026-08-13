@@ -80,7 +80,7 @@ export default function PhotoReel({
       {/* trigger */}
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex w-full sm:w-auto justify-center items-center gap-2.5 px-5 py-3 border border-inkline bg-panel text-bone hover:st-border hover:st-text transition-colors font-display font-bold text-sm hard-shadow"
+        className="inline-flex items-center gap-2.5 px-5 py-3 border border-inkline bg-panel text-bone hover:st-border hover:st-text transition-colors font-display font-bold text-sm hard-shadow"
         style={{ ["--st" as string]: accent } as React.CSSProperties}
       >
         <span className="font-tech text-[9px] tracking-[0.25em] uppercase st-text">REEL ▸</span>

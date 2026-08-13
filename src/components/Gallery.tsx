@@ -57,45 +57,33 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
 
   return (
     <div style={{ ["--st" as string]: accent }}>
-      {/*
-        Rejilla de fotos a buen tamaño:
-        · móvil  → 1 columna a todo el ancho (antes eran 2 diminutas)
-        · tablet → 2 columnas
-        · escritorio → 3 columnas, con la primera foto destacada al doble
-        El pie de foto se ve siempre en táctil (no hay «hover» en el móvil).
-      */}
+      {/* a pantalla casi completa en móvil (1 columna GRANDE), 2 en sm y 3 en escritorio */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {images.map((img, i) => {
-          const featured = i === 0 && images.length > 1;
-          return (
-            <button
-              key={img.id}
-              onClick={() => setOpen(i)}
-              className={`group relative overflow-hidden border border-inkline bg-coal-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st)] ${
-                featured
-                  ? "sm:col-span-2 aspect-[4/3] sm:aspect-[16/9]"
-                  : "aspect-[4/3]"
-              }`}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={img.url}
-                alt={img.caption || `Foto ${i + 1}`}
-                loading={i < 3 ? "eager" : "lazy"}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-              />
-              {/* Pie: siempre legible en móvil, aparece al pasar el ratón en escritorio. */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 pt-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
-                <span className="font-tech text-[11px] tracking-wider text-bone line-clamp-2">
-                  {img.caption || `CAPTURA ${String(i + 1).padStart(2, "0")}`}
-                </span>
-              </div>
-              <span className="absolute top-2 left-2 font-tech text-[10px] px-1.5 py-0.5 bg-coal/80 text-bone-dim border border-inkline opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                VER COMPLETA +
+        {images.map((img, i) => (
+          <button
+            key={img.id}
+            onClick={() => setOpen(i)}
+            className="group relative aspect-[4/3] overflow-hidden border border-inkline bg-coal-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st)]"
+          >
+            {/* Todas las tarjetas usan el mismo formato; la foto completa se ve al abrirla. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* en móvil y táctil mostramos la leyenda SIEMPRE para dar tamaño; hover se usa solo en escritorio */}
+            <img
+              src={img.url}
+              alt={img.caption || `Foto ${i + 1}`}
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3.5 sm:p-4">
+              <span className="font-tech text-[11px] tracking-wider text-bone">
+                {img.caption || `CAPTURA ${String(i + 1).padStart(2, "0")}`}
               </span>
-            </button>
-          );
-        })}
+            </div>
+            <span className="absolute top-2 left-2 font-tech text-[10px] px-1.5 py-1 bg-coal/80 text-bone-dim border border-inkline opacity-0 group-hover:opacity-100 transition-opacity">
+              VER COMPLETA +
+            </span>
+          </button>
+        ))}
       </div>
 
       {/* ===== VISOR: imagen completa, nunca recortada ===== */}
@@ -121,8 +109,8 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
             </button>
           </div>
 
-          {/* imagen: object-contain SIEMPRE completa */}
-          <div className="relative flex-1 min-h-0 flex items-center justify-center px-4 sm:px-16">
+          {/* imagen: object-contain SIEMPRE completa; casi sin marcos en móvil para que se vea GRANDE */}
+          <div className="relative flex-1 min-h-0 flex items-center justify-center px-2 py-2 sm:px-8 md:px-16">
             {/* fondo difuminado con la misma foto */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -136,7 +124,7 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
               key={current.id}
               src={current.url}
               alt={current.caption || "Foto ampliada"}
-              className="relative max-h-full max-w-full w-auto h-auto object-contain border border-inkline shadow-2xl select-none"
+              className="relative max-h-full max-w-full w-auto h-auto object-contain border border-inkline shadow-2xl select-none rounded-sm"
               draggable={false}
             />
 

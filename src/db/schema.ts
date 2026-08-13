@@ -27,6 +27,19 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  artistId: integer("artist_id")
+    .notNull()
+    .references(() => artists.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Favorite = typeof favorites.$inferSelect;
+
 export const artists = pgTable("artists", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
@@ -56,19 +69,6 @@ export const artists = pgTable("artists", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const favorites = pgTable("favorites", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  artistId: integer("artist_id")
-    .notNull()
-    .references(() => artists.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-export type Favorite = typeof favorites.$inferSelect;
-
 export const verificationDocs = pgTable("verification_docs", {
   id: serial("id").primaryKey(),
   artistId: integer("artist_id")
@@ -91,6 +91,8 @@ export const tracks = pgTable("tracks", {
   title: text("title").notNull(),
   durationSec: integer("duration_sec").notNull().default(210),
   position: integer("position").notNull().default(0),
+  /** Destacada: la canción lleva la etiqueta neón en los reproductores. */
+  featured: integer("featured").notNull().default(0), // 0 = normal, 1 = destacada
   lyrics: text("lyrics").notNull().default(""),
   plays: integer("plays").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

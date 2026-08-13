@@ -19,10 +19,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (!owner) return json({ error: "Sesión no válida." }, 403);
 
   const body = await req.json().catch(() => ({}));
-  const lyrics = String(body.lyrics ?? "").slice(0, 8000);
+  const patch: Partial<typeof tracks.$inferSelect> = {};
+  if (body.lyrics !== undefined) patch.lyrics = String(body.lyrics).slice(0, 8000);
+  if (body.featured !== undefined) patch.featured = body.featured ? 1 : 0;
+  if (Object.keys(patch).length === 0) return json({ error: "Nada que actualizar." }, 400);
+
   const [track] = await db
     .update(tracks)
-    .set({ lyrics })
+    .set(patch)
     .where(and(eq(tracks.id, trackId), eq(tracks.artistId, artistId)))
     .returning();
   if (!track) return json({ error: "Pista no encontrada." }, 404);

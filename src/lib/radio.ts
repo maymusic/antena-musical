@@ -30,6 +30,8 @@ export type RadioSlot = {
   artistSlug: string;
   accent: string;
   coverUrl: string;
+  /** 1 si el artista la marcó como destacada. */
+  featured: number;
   /** Segundo del ciclo en el que arranca esta pista. */
   startsAt: number;
 };
@@ -90,6 +92,7 @@ export async function getSchedule(): Promise<RadioSlot[]> {
       artistSlug: artists.slug,
       accent: artists.accent,
       coverUrl: artists.coverUrl,
+      featured: tracks.featured,
     })
     .from(tracks)
     .innerJoin(artists, eq(tracks.artistId, artists.id))

@@ -330,18 +330,12 @@ export default function RadioDeck({
                 <iframe>. El encuadre lo pone `.yt-screen` (el contenedor),
                 que sobrevive a esa sustitución: sin esto el video se veía negro.
               */}
-              {/*
-                Se oculta con `visibility`, NO con opacity/display: si YouTube
-                crea el reproductor dentro de un nodo sin tamaño real, genera un
-                iframe de 0×0 y la pantalla se queda negra para siempre.
-              */}
               <div
-                className="yt-screen"
-                style={{
-                  visibility:
-                    current?.platform === "youtube" && started ? "visible" : "hidden",
-                  zIndex: current?.platform === "youtube" && started ? 10 : 0,
-                }}
+                className={`yt-screen transition-opacity duration-500 ${
+                  current?.platform === "youtube" && started
+                    ? "opacity-100 z-10"
+                    : "opacity-0 -z-10 pointer-events-none"
+                }`}
               >
                 <div id={`yt-target-${artistId}`} />
               </div>
@@ -582,6 +576,7 @@ export default function RadioDeck({
                     </span>
                     <PlatformChip platform={t.platform} />
                     <span className={`flex-1 truncate text-sm ${active ? "font-semibold st-text" : "text-bone"}`}>{t.title}</span>
+                    {(t as Track).featured ? <span className="featured-chip shrink-0">Destacada</span> : null}
                     {active && playing ? (
                       <VuMeter playing bars={4} />
                     ) : (
