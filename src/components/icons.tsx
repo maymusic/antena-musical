@@ -72,6 +72,18 @@ export const IconSpotify = (props: P) => (
   </svg>
 );
 
+export const IconFacebook = (props: P) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+  </svg>
+);
+
+export const IconWhatsapp = (props: P) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2zm5.4 14.2c-.2.7-1.3 1.3-1.8 1.3-.5.1-1 .2-3.4-.7-2.9-1.2-4.7-4-4.9-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5s.8 1.9.8 2c.1.2.1.4 0 .6-.1.2-.2.4-.3.5l-.5.6c-.2.2-.3.3-.1.6.1.3.7 1.1 1.5 1.8 1 .9 1.9 1.2 2.2 1.3.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.5.3.1.2.1.8-.1 1.6z" />
+  </svg>
+);
+
 export const IconInstagram = (props: P) => (
   <svg {...base(props)}>
     <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -237,6 +249,8 @@ export function VuMeter({ playing, bars = 5, className = "" }: { playing: boolea
 
 export function socialIcon(key: string, className = "w-4 h-4") {
   switch (key) {
+    case "facebook": return <IconFacebook className={className} />;
+    case "whatsapp": return <IconWhatsapp className={className} />;
     case "instagram": return <IconInstagram className={className} />;
     case "youtube": return <IconYoutube className={className} />;
     case "tiktok": return <IconTiktok className={className} />;
@@ -251,6 +265,8 @@ export function socialHref(key: string, value: string): string {
   const v = value.trim();
   if (v.startsWith("http")) return v;
   if (key === "email") return `mailto:${v}`;
+  if (key === "facebook") return `https://facebook.com/${v.replace(/^@/, "")}`;
+  if (key === "whatsapp") return `https://wa.me/${v.replace(/[^\d]/g, "")}`;
   if (key === "instagram") return `https://instagram.com/${v.replace(/^@/, "")}`;
   if (key === "tiktok") return `https://tiktok.com/@${v.replace(/^@/, "")}`;
   if (key === "x") return `https://x.com/${v.replace(/^@/, "")}`;

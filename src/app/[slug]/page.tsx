@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { artists, images, shows, tracks } from "@/db/schema";
 import { fakeFrequency, formatDate, isPlayable } from "@/lib/parse";
+import { normalizeGoogleDriveFile } from "@/lib/drivefile";
 import { Footer } from "@/components/Chrome";
 import RadioDeck from "@/components/RadioDeck";
 import Gallery from "@/components/Gallery";
@@ -82,6 +83,7 @@ export default async function StationPage({ params }: Ctx) {
   const upcomingShows = stationShows.filter((s) => new Date(s.showDate).getTime() > Date.now() - 86400000);
   const memberSince = new Date(artist.createdAt).toLocaleDateString("es-ES", { month: "short", year: "numeric" });
   const isVerified = artist.verificationStatus === "approved";
+  const driveKit = artist.presskitUrl ? normalizeGoogleDriveFile(artist.presskitUrl) : null;
   const youtubeVideos = stationTracks.filter((t) => t.platform === "youtube");
   const lyricTracks = stationTracks.filter((t) => t.lyrics.trim().length > 0);
   const latestTrackId = stationTracks.reduce((max, t) => Math.max(max, t.id), 0);
@@ -234,6 +236,17 @@ export default async function StationPage({ params }: Ctx) {
                 >
                   ⬇ Press kit (PDF)
                 </a>
+                {driveKit && (
+                  <a
+                    href={driveKit.downloadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border st-border bg-coal/60 st-text font-tech text-[10px] tracking-[0.2em] uppercase hover:brightness-125 transition-all"
+                    title={artist.presskitLabel || "Press kit del artista"}
+                  >
+                    ⬇ {artist.presskitLabel || "Press kit del artista"}
+                  </a>
+                )}
                   <div className="flex items-center gap-2 justify-center flex-wrap">
                     <FavButton artistId={artist.id} slug={artist.slug} name={artist.name} accent={artist.accent} />
                     <ShareButtons title={artist.name} accent={artist.accent} />
@@ -367,6 +380,16 @@ export default async function StationPage({ params }: Ctx) {
                   <dt className="font-tech text-[10px] tracking-widest uppercase text-bone-dim pt-0.5">En la red</dt>
                   <dd className="text-right capitalize">{memberSince}</dd>
                 </div>
+                {driveKit && (
+                  <div className="flex justify-between gap-4 px-5 py-3.5">
+                    <dt className="font-tech text-[10px] tracking-widest uppercase text-bone-dim pt-0.5">Press kit</dt>
+                    <dd className="text-right">
+                      <a href={driveKit.downloadUrl} target="_blank" rel="noreferrer" className="st-text hover:underline font-semibold">
+                        {driveKit.kind === "folder" ? "Abrir carpeta ↗" : "Descargar ⬇"}
+                      </a>
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between gap-4 px-5 py-3.5">
                   <dt className="font-tech text-[10px] tracking-widest uppercase text-bone-dim pt-0.5">Verificación</dt>
                   <dd className="text-right flex items-center justify-end gap-1.5">

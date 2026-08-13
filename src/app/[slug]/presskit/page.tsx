@@ -182,6 +182,14 @@ export default async function PressKitPage({ params }: Ctx) {
               </div>
             )}
           </div>
+          {artist.presskitUrl && (
+            <p className="mt-6 text-sm">
+              <span className="font-bold">Press kit completo del artista:</span>{" "}
+              <a href={artist.presskitUrl} className="underline" style={{ color: artist.accent }}>
+                {artist.presskitLabel || "Descargar desde Google Drive"}
+              </a>
+            </p>
+          )}
           <p className="mt-8 text-[10px] tracking-[0.3em] uppercase text-neutral-400">
             Generado por ANTENA MUSICAL — la red de radios de artista · antenamusical.com/{artist.slug}
           </p>

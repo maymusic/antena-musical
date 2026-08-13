@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TopBar, Footer } from "@/components/Chrome";
 import { useSession } from "@/components/SessionProvider";
+import ChangePassword from "@/components/ChangePassword";
 import { IconAntenna, IconCheck, IconTrash, IconVerified } from "@/components/icons";
 
 type ArtistRow = {
@@ -276,6 +277,8 @@ export default function AdminPage() {
         )}
 
         {tab === "messages" && <div className="border border-inkline divide-y divide-inkline">{messages.length === 0 ? <p className="p-8 text-center text-bone-dim">No hay mensajes de chat.</p> : messages.map((m) => <div key={m.id} className="flex gap-4 p-4 bg-panel"><span className="w-9 h-9 shrink-0 rounded-full bg-coal-2 border border-inkline flex items-center justify-center font-display font-bold text-signal">{m.nick[0]}</span><div className="flex-1"><p className="font-tech text-[10px] text-bone-dim"><Link href={`/${m.artistSlug}`} className="text-signal hover:underline">{m.artistName}</Link> · {m.nick} · {new Date(m.createdAt).toLocaleString("es-ES")}</p><p className="mt-1 text-sm">{m.body}</p></div><button onClick={() => deleteMessage(m.id)} className="p-2 h-fit border border-inkline text-bone-dim hover:bg-signal hover:text-coal"><IconTrash className="w-4 h-4" /></button></div>)}</div>}
+
+        {tab === "users" && <div className="mb-6"><ChangePassword accent="#FFB000" /></div>}
 
         {tab === "users" && <div className="border border-inkline divide-y divide-inkline">{(data?.users ?? []).map((u) => <div key={u.id} className="flex items-center gap-4 p-4 bg-panel"><span className="w-9 h-9 rounded-full bg-coal-2 border border-inkline flex items-center justify-center font-display font-bold text-signal">{u.email[0].toUpperCase()}</span><div className="flex-1"><p className="font-semibold text-sm">{u.email}</p><p className="font-tech text-[9px] text-bone-dim">Cuenta #{u.id} · creada {new Date(u.createdAt).toLocaleDateString("es-ES")}</p></div><span className={`px-2 py-1 border font-tech text-[9px] tracking-widest uppercase ${u.role === "admin" ? "border-amber/50 text-amber" : "border-inkline text-bone-dim"}`}>{u.role}</span><span className="font-tech text-[9px] text-bone-dim">{u.artistId ? `Perfil #${u.artistId}` : "sin perfil"}</span></div>)}</div>}
       </main>

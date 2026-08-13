@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Artist, ImageRow, Show, Track } from "@/db/schema";
 import { ACCENTS, MAX_GENRES, SOCIAL_FIELDS, formatDate, isPlayable, parseDurationInput, parseMusicUrl } from "@/lib/parse";
 import GenrePicker from "./GenrePicker";
+import ChangePassword from "./ChangePassword";
 import {
   IconCalendar,
   IconCheck,
@@ -73,6 +74,8 @@ function ProfileTab({
     socials: artist.socials,
     phone: artist.phone,
     booking: artist.booking,
+    presskitUrl: artist.presskitUrl,
+    presskitLabel: artist.presskitLabel,
   });
   const [busy, setBusy] = useState(false);
   const [coverBusy, setCoverBusy] = useState(false);
@@ -249,6 +252,40 @@ function ProfileTab({
         </div>
         <p className="font-tech text-[9px] tracking-wider text-bone-dim">
           Aparecen en tu estación y en el press kit — para que las salas y festivales te encuentren.
+        </p>
+      </div>
+
+      <div className="border border-inkline bg-coal-2 p-5 space-y-4">
+        <div>
+          <span className={labelCls}>Tu press kit descargable (Google Drive)</span>
+          <p className="text-sm text-bone-dim">
+            Sube tu press kit propio a Drive (PDF, ZIP o una carpeta con fotos) y compártelo aquí. El público podrá
+            descargarlo con un botón en tu estación.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-[1.6fr_1fr] gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-bone-dim mb-1.5">Enlace de Drive</label>
+            <input
+              className={`${inputCls} font-tech text-[11px]`}
+              value={form.presskitUrl}
+              onChange={(e) => setForm({ ...form, presskitUrl: e.target.value })}
+              placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-bone-dim mb-1.5">Nombre visible</label>
+            <input
+              className={inputCls}
+              value={form.presskitLabel}
+              onChange={(e) => setForm({ ...form, presskitLabel: e.target.value })}
+              placeholder="Ej. Press kit oficial 2026"
+              maxLength={120}
+            />
+          </div>
+        </div>
+        <p className="font-tech text-[9px] tracking-wider text-bone-dim">
+          Acepta archivos sueltos y carpetas · Compartir → «Cualquier persona con el enlace» · Déjalo vacío para quitarlo.
         </p>
       </div>
 
@@ -1410,6 +1447,8 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
           <IconCheck className="w-4 h-4" /> {toast}
         </div>
       )}
+
+      <ChangePassword accent={artist.accent} />
 
       {/* zona peligrosa */}
       <div className="border border-signal/40 bg-signal/5 p-5">

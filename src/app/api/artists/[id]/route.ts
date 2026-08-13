@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { artists, users } from "@/db/schema";
 import { authorizedArtist, json, sanitizeHex } from "@/lib/api";
+import { normalizeGoogleDriveFile } from "@/lib/drivefile";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,22 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
   if (typeof patch.phone === "string") updates.phone = patch.phone.trim().slice(0, 40);
   if (typeof patch.booking === "string") updates.booking = patch.booking.trim().slice(0, 300);
+  if (typeof patch.presskitLabel === "string") updates.presskitLabel = patch.presskitLabel.trim().slice(0, 120);
+  if (typeof patch.presskitUrl === "string") {
+    const raw = patch.presskitUrl.trim();
+    if (raw === "") {
+      updates.presskitUrl = "";
+    } else {
+      const drive = normalizeGoogleDriveFile(raw);
+      if (!drive) {
+        return json(
+          { error: "El press kit debe ser un enlace público de Google Drive (archivo o carpeta compartida)." },
+          400
+        );
+      }
+      updates.presskitUrl = drive.viewUrl;
+    }
+  }
   if (Array.isArray(patch.credits)) {
     updates.credits = (patch.credits as unknown[])
       .map((c) => {

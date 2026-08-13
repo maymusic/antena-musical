@@ -60,6 +60,8 @@ export const artists = pgTable("artists", {
   credits: jsonb("credits").$type<{ role: string; name: string }[]>().notNull().default([]),
   moderationStatus: text("moderation_status").notNull().default("active"), // active | suspended | pending
   moderationNote: text("moderation_note").notNull().default(""),
+  presskitUrl: text("presskit_url").notNull().default(""),
+  presskitLabel: text("presskit_label").notNull().default(""),
   verificationStatus: text("verification_status").notNull().default("none"), // none | requested | uploaded | approved | rejected
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   verificationNote: text("verification_note").notNull().default(""),

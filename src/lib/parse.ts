@@ -85,10 +85,12 @@ export const ACCENTS = [
 ];
 
 export const SOCIAL_FIELDS = [
+  { key: "facebook", label: "Facebook", placeholder: "Tu página o URL de perfil" },
   { key: "instagram", label: "Instagram", placeholder: "@tucuenta o URL" },
   { key: "youtube", label: "YouTube", placeholder: "URL de tu canal" },
   { key: "tiktok", label: "TikTok", placeholder: "@tucuenta o URL" },
   { key: "x", label: "X / Twitter", placeholder: "@tucuenta o URL" },
+  { key: "whatsapp", label: "WhatsApp", placeholder: "+52 55 1234 5678" },
   { key: "bandcamp", label: "Bandcamp", placeholder: "URL" },
   { key: "email", label: "Email de contacto", placeholder: "hola@tucorreo.com" },
 ];
