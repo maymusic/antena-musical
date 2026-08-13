@@ -56,7 +56,7 @@ No tienen manager, no tienen press kit y no piden permiso. Tienen esta estación
 INSERT INTO tracks (artist_id, platform, kind, external_id, url, title, duration_sec, position) VALUES
 (1, 'youtube', 'video', '60ItHLz5WEA', 'https://www.youtube.com/watch?v=60ItHLz5WEA', 'Marea de neón — sesión en vivo', 212, 0),
 (1, 'youtube', 'video', 'YQHsXMglC9A', 'https://www.youtube.com/watch?v=YQHsXMglC9A', 'Cuarto frío (demo 2025)', 295, 1),
-(1, 'spotify', 'track', '4NRXx6U8ABQ', 'https://open.spotify.com/track/4NRXx6U8ABQ', 'Norte magnético — oficial', 200, 2),
+(1, 'spotify', 'track', '0VjIjW4GlUZAMYd2vXMi3b', 'https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b', 'Norte magnético — oficial', 200, 2),
 (1, 'youtube', 'video', 'CevxZvSJLk8', 'https://www.youtube.com/watch?v=CevxZvSJLk8', 'Vapor — visualizer', 229, 3),
 (2, 'youtube', 'video', 'kJQP7kiw5Fk', 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', 'Río abajo — video oficial', 288, 0),
 (2, 'youtube', 'video', '2Vv-BfVoq4g', 'https://www.youtube.com/watch?v=2Vv-BfVoq4g', 'Sol de octubre (en vivo)', 263, 1),
@@ -89,4 +89,12 @@ INSERT INTO shows (artist_id, show_date, venue, city) VALUES
 (3, '2026-08-15 22:00:00+00', 'El Garaje Original', 'Bogotá, CO'),
 (3, '2026-10-03 21:00:00+00', 'Festival Ruido Libre', 'Medellín, CO');
 
-SELECT a.name, (SELECT count(*) FROM tracks t WHERE t.artist_id = a.id) AS pistas, (SELECT count(*) FROM images i WHERE i.artist_id = a.id) AS fotos FROM artists a;
+-- ============ VERIFICACIÓN (palomita azul) ============
+-- Dos estaciones verificadas y una con la solicitud en curso, para que se vea
+-- la palomita azul en la portada, en la ficha del artista y en la tarjeta al compartir.
+UPDATE artists SET verification_status = 'approved', verified_at = now()
+ WHERE slug IN ('neblina-norte', 'rio-solar');
+UPDATE artists SET verification_status = 'requested'
+ WHERE slug = 'las-voltaje';
+
+SELECT a.name, a.verification_status, (SELECT count(*) FROM tracks t WHERE t.artist_id = a.id) AS pistas, (SELECT count(*) FROM images i WHERE i.artist_id = a.id) AS fotos FROM artists a;

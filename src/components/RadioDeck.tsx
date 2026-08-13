@@ -56,9 +56,10 @@ export default function RadioDeck({
   const [clock, setClock] = useState("--:--:--");
   const [ytReady, setYtReady] = useState(false);
   const [started, setStarted] = useState(false);
+  /** Pista pendiente de sonar tras ampliar la rotación a los embeds. */
+  const [pendingIndex, setPendingIndex] = useState<number | null>(null);
 
   const playerRef = useRef<any>(null);
-  const pendingVideoId = useRef<string | null>(null);
   const iframeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeEndsAt = useRef<number>(0);
   const shuffleRef = useRef(shuffle);
@@ -93,41 +94,14 @@ export default function RadioDeck({
     let cancelled = false;
     loadYouTubeApi().then((YT) => {
       if (cancelled) return;
-      // El contenedor debe tener tamaño real antes de crear el player;
-      // si se crea con opacity-0 o 0×0, YouTube deja un iframe negro permanente.
       playerRef.current = new YT.Player(`yt-target-${artistId}`, {
         width: "100%",
         height: "100%",
-        playerVars: {
-          rel: 0,
-          modestbranding: 1,
-          playsinline: 1,
-          autoplay: 0,
-          controls: 0,
-          fs: 0,
-          iv_load_policy: 3,
-          disablekb: 1,
-        },
+        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
         events: {
           onReady: () => {
-            if (cancelled) return;
             setYtReady(true);
-            try {
-              playerRef.current?.setVolume?.(volume);
-            } catch {
-              /* noop */
-            }
-            // Si el usuario ya había pulsado play antes de que el API estuviera listo
-            if (pendingVideoId.current) {
-              const id = pendingVideoId.current;
-              pendingVideoId.current = null;
-              try {
-                playerRef.current?.loadVideoById?.(id);
-                playerRef.current?.playVideo?.();
-              } catch {
-                /* noop */
-              }
-            }
+            playerRef.current?.setVolume(volume);
           },
           onStateChange: (e: any) => {
             if (e.data === YT.PlayerState.ENDED) {
@@ -135,21 +109,14 @@ export default function RadioDeck({
             } else if (e.data === YT.PlayerState.PLAYING) {
               setPlaying(true);
             } else if (e.data === YT.PlayerState.PAUSED) {
-              setPlaying((p) =>
-                indexRef.current !== null && playable[indexRef.current]?.platform === "youtube" ? false : p
-              );
+              setPlaying((p) => (indexRef.current !== null && playable[indexRef.current]?.platform === "youtube" ? false : p));
             }
-          },
-          onError: () => {
-            // Video no disponible / restringido → saltar a la siguiente
-            advance(1, true);
           },
         },
       });
     });
     return () => {
       cancelled = true;
-      pendingVideoId.current = null;
       try {
         playerRef.current?.destroy();
       } catch {
@@ -223,22 +190,9 @@ export default function RadioDeck({
       fetch(`/api/tracks/${t.id}/play`, { method: "POST" }).catch(() => {});
       if (t.platform === "youtube") {
         setProgress({ cur: 0, dur: 0 });
-        const load = () => {
-          try {
-            playerRef.current?.loadVideoById?.(t.externalId);
-            playerRef.current?.setVolume?.(volume);
-            // Algunos navegadores bloquean autoplay hasta el gesto del usuario;
-            // playVideo() aquí aprovecha el click que acaba de ocurrir.
-            playerRef.current?.playVideo?.();
-          } catch {
-            /* noop */
-          }
-        };
         if (playerRef.current?.loadVideoById) {
-          load();
-        } else {
-          // API aún no lista → encolar y cargar en onReady
-          pendingVideoId.current = t.externalId;
+          playerRef.current.loadVideoById(t.externalId);
+          playerRef.current.setVolume?.(volume);
         }
       } else {
         // Embed (Spotify / SoundCloud / Deezer): iframe con autoplay + avance automático.
@@ -264,6 +218,33 @@ export default function RadioDeck({
   );
   const playAtRef = useRef(playAt);
   playAtRef.current = playAt;
+
+  /**
+   * Reproduce una pista incrustable que ahora mismo está fuera de la rotación
+   * (pasa con Spotify cuando está activo el modo «sin cortes»).
+   * En vez de mandar al oyente a otra pestaña, ampliamos la rotación para
+   * incluir los embeds y sonamos la pista aquí dentro.
+   */
+  const playEmbeddable = useCallback(
+    (t: Track) => {
+      const inRotation = playable.indexOf(t);
+      if (inRotation !== -1) {
+        playAtRef.current(inRotation);
+        return;
+      }
+      setAutoOnly(false);
+      const target = embeddable.indexOf(t);
+      if (target !== -1) setPendingIndex(target);
+    },
+    [playable, embeddable]
+  );
+
+  /* Al ampliar la rotación, arrancamos la pista que pidió el oyente. */
+  useEffect(() => {
+    if (pendingIndex === null || autoOnly) return;
+    playAtRef.current(pendingIndex);
+    setPendingIndex(null);
+  }, [pendingIndex, autoOnly]);
 
   const advance = useCallback(
     (dir: 1 | -1, auto = false) => {
@@ -343,22 +324,23 @@ export default function RadioDeck({
         <div className="grid lg:grid-cols-[1.5fr_1fr]">
           {/* pantalla */}
           <div className="relative border-b lg:border-b-0 lg:border-r border-inkline">
-            <div className="relative aspect-video bg-black overflow-hidden">
+            <div className="relative aspect-video bg-black">
               {/*
-                El contenedor de YouTube DEBE tener tamaño real (w-full h-full) desde el
-                primer render. Si se crea el player con opacity-0 o 0×0, YouTube deja
-                un iframe negro permanente. La visibilidad se controla con un overlay.
+                El div interior lo reemplaza la IFrame API de YouTube por su
+                <iframe>. El encuadre lo pone `.yt-screen` (el contenedor),
+                que sobrevive a esa sustitución: sin esto el video se veía negro.
               */}
               <div
-                id={`yt-target-${artistId}`}
-                className="absolute inset-0 w-full h-full"
-                style={{
-                  // Ocultar visualmente solo cuando no es YouTube o aún no se ha sintonizado
-                  visibility: current?.platform === "youtube" && started ? "visible" : "hidden",
-                }}
-              />
+                className={`yt-screen transition-opacity duration-500 ${
+                  current?.platform === "youtube" && started
+                    ? "opacity-100 z-10"
+                    : "opacity-0 -z-10 pointer-events-none"
+                }`}
+              >
+                <div id={`yt-target-${artistId}`} />
+              </div>
               {current && isIframe && started && (
-                <div className="absolute inset-0 flex flex-col z-10">
+                <div className="absolute inset-0 z-20 flex flex-col">
                   <div className="flex items-center gap-2 px-3 py-2 bg-amber text-coal shrink-0">
                     <span className="font-tech text-[10px] tracking-[0.2em] uppercase font-bold">
                       ▶ Pulsa play dentro del panel de {platformLabel(current.platform)}
@@ -381,7 +363,7 @@ export default function RadioDeck({
                 <button
                   onClick={() => playable.length > 0 && playAt(0)}
                   disabled={playable.length === 0}
-                  className="absolute inset-0 w-full z-20 group text-left disabled:cursor-not-allowed"
+                  className="absolute inset-0 w-full group text-left disabled:cursor-not-allowed"
                 >
                   {coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -545,8 +527,26 @@ export default function RadioDeck({
                 const playIdx = playable.indexOf(t);
                 const active = playIdx !== -1 && playIdx === index;
                 if (playIdx === -1) {
-                  // No está en la rotación actual: enlace externo o pista de play manual.
-                  const manual = isPlayable(t.platform);
+                  // Fuera de la rotación actual.
+                  // Si la plataforma se puede incrustar (Spotify, SoundCloud,
+                  // Deezer) la abrimos DENTRO de la cabina, no en otra pestaña:
+                  // salir a Spotify cortaba la escucha.
+                  if (isPlayable(t.platform)) {
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => playEmbeddable(t)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left border-b border-inkline/60 hover:bg-coal-2 transition-colors group"
+                      >
+                        <PlatformChip platform={t.platform} />
+                        <span className="flex-1 truncate text-sm text-bone/80">{t.title}</span>
+                        <span className="font-tech text-[9px] tracking-[0.2em] uppercase shrink-0 text-amber group-hover:brightness-125 transition">
+                          ▶ sonar aquí
+                        </span>
+                      </button>
+                    );
+                  }
+                  // Plataforma sin reproductor incrustable: sí abrimos fuera.
                   return (
                     <a
                       key={t.id}
@@ -557,8 +557,8 @@ export default function RadioDeck({
                     >
                       <PlatformChip platform={t.platform} />
                       <span className="flex-1 truncate text-sm text-bone/80">{t.title}</span>
-                      <span className={`font-tech text-[9px] tracking-[0.2em] uppercase shrink-0 transition-colors ${manual ? "text-amber" : "text-bone-dim group-hover:st-text"}`}>
-                        {manual ? "▶ play manual" : `Escuchar en ${platformLabel(t.platform)} ↗`}
+                      <span className="font-tech text-[9px] tracking-[0.2em] uppercase shrink-0 text-bone-dim group-hover:st-text transition-colors">
+                        Escuchar en {platformLabel(t.platform)} ↗
                       </span>
                     </a>
                   );

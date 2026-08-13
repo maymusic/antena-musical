@@ -6,7 +6,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:push": "drizzle-kit push",
+    "db:seed": "psql $DATABASE_URL -f scripts/seed.sql",
+    "db:users": "node scripts/seed-users.mjs"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",

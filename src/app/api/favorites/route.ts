@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       slug: artists.slug,
       name: artists.name,
       accent: artists.accent,
+      verificationStatus: artists.verificationStatus,
     })
     .from(favorites)
     .innerJoin(artists, eq(favorites.artistId, artists.id))

@@ -172,3 +172,25 @@ input[type="range"].fader::-moz-range-thumb {
 .st-bg { background-color: var(--st); }
 .st-border { border-color: var(--st); }
 .st-shadow { box-shadow: 6px 6px 0 0 var(--st); }
+
+/*
+  Pantalla de video.
+  La IFrame API de YouTube SUSTITUYE el div objetivo por su propio <iframe>,
+  y al hacerlo se pierden las clases que tuviera ese div. Por eso el encuadre
+  se aplica desde el contenedor: así el video siempre llena la pantalla de la
+  cabina en lugar de quedarse en negro.
+*/
+.yt-screen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.yt-screen > div,
+.yt-screen iframe {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+  display: block;
+}

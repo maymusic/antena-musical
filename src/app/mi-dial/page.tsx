@@ -5,9 +5,15 @@ import Link from "next/link";
 import { TopBar, Footer } from "@/components/Chrome";
 import { useSession } from "@/components/SessionProvider";
 import { getLocalFavs } from "@/components/FavButton";
-import { IconArrowRight, IconAntenna } from "@/components/icons";
+import { IconArrowRight, IconAntenna, IconVerified } from "@/components/icons";
 
-type Fav = { id?: number; slug: string; name: string; accent?: string };
+type Fav = {
+  id?: number;
+  slug: string;
+  name: string;
+  accent?: string;
+  verificationStatus?: string;
+};
 
 export default function MiDialPage() {
   const { session } = useSession();
@@ -83,8 +89,11 @@ export default function MiDialPage() {
                     {f.name[0]}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block font-display font-extrabold text-lg truncate group-hover:st-text transition-colors">
-                      {f.name}
+                    <span className="flex items-center gap-1.5 font-display font-extrabold text-lg group-hover:st-text transition-colors">
+                      <span className="truncate">{f.name}</span>
+                      {f.verificationStatus === "approved" && (
+                        <IconVerified className="w-4 h-4 shrink-0" />
+                      )}
                     </span>
                     <span className="block font-tech text-[10px] tracking-widest uppercase text-bone-dim">
                       /{f.slug}

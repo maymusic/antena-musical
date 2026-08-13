@@ -238,7 +238,11 @@ export function GlobalPlayerProvider({ children }: { children: React.ReactNode }
         style={isActive && expanded ? undefined : { left: "-9999px", top: "-9999px" }}
         aria-hidden={!expanded}
       >
-        <div id="antena-global-player" className="w-full h-full" />
+        {/* `.yt-screen` mantiene el encuadre aunque la API de YouTube
+            sustituya el div interior por su propio iframe. */}
+        <div className="yt-screen">
+          <div id="antena-global-player" />
+        </div>
       </div>
 
       {isActive && current && (
