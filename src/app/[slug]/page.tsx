@@ -234,10 +234,10 @@ export default async function StationPage({ params }: Ctx) {
                 >
                   ⬇ Press kit (PDF)
                 </a>
-                <div className="flex items-center gap-2 justify-center flex-wrap">
-                  <FavButton slug={artist.slug} name={artist.name} accent={artist.accent} />
-                  <ShareButtons title={artist.name} accent={artist.accent} />
-                </div>
+                  <div className="flex items-center gap-2 justify-center flex-wrap">
+                    <FavButton artistId={artist.id} slug={artist.slug} name={artist.name} accent={artist.accent} />
+                    <ShareButtons title={artist.name} accent={artist.accent} />
+                  </div>
                 {socialEntries.length > 0 && (
                   <div className="flex items-center gap-2 justify-center flex-wrap">
                     {socialEntries.map(([key, value]) => (

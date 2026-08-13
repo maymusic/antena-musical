@@ -27,6 +27,19 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export const favorites = pgTable("favorites", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  artistId: integer("artist_id")
+    .notNull()
+    .references(() => artists.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Favorite = typeof favorites.$inferSelect;
+
 export const artists = pgTable("artists", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),

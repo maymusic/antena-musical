@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "./SessionProvider";
 
 type Fav = { slug: string; name: string; accent: string };
 const KEY = "antena:mi-dial";
 
-export function getFavs(): Fav[] {
+export function getLocalFavs(): Fav[] {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "[]");
   } catch {
@@ -13,28 +14,67 @@ export function getFavs(): Fav[] {
   }
 }
 
-/** Corazón de "añadir a Mi dial" (favoritos guardados en este navegador). */
-export default function FavButton({ slug, name, accent }: Fav) {
+export default function FavButton({
+  artistId,
+  slug,
+  name,
+  accent,
+}: {
+  artistId: number;
+  slug: string;
+  name: string;
+  accent: string;
+}) {
+  const { session } = useSession();
   const [on, setOn] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setOn(getFavs().some((f) => f.slug === slug));
-  }, [slug]);
-
-  const toggle = () => {
-    const favs = getFavs();
-    if (on) {
-      localStorage.setItem(KEY, JSON.stringify(favs.filter((f) => f.slug !== slug)));
-      setOn(false);
+    if (session.logged) {
+      fetch("/api/favorites", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          const list = data.favorites ?? [];
+          setOn(list.some((f: any) => f.slug === slug));
+        })
+        .catch(() => {});
     } else {
-      localStorage.setItem(KEY, JSON.stringify([...favs, { slug, name, accent }]));
-      setOn(true);
+      setOn(getLocalFavs().some((f) => f.slug === slug));
+    }
+  }, [session.logged, slug]);
+
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    if (session.logged) {
+      try {
+        const res = await fetch("/api/favorites", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ artistId }),
+        });
+        const data = await res.json();
+        if (res.ok) setOn(data.favorited);
+      } finally {
+        setBusy(false);
+      }
+    } else {
+      const favs = getLocalFavs();
+      if (on) {
+        localStorage.setItem(KEY, JSON.stringify(favs.filter((f) => f.slug !== slug)));
+        setOn(false);
+      } else {
+        localStorage.setItem(KEY, JSON.stringify([...favs, { slug, name, accent }]));
+        setOn(true);
+      }
+      setBusy(false);
     }
   };
 
   return (
     <button
       onClick={toggle}
+      disabled={busy}
       style={{ ["--st" as string]: accent }}
       className={`inline-flex items-center gap-2 px-4 py-2.5 border font-tech text-[10px] tracking-[0.2em] uppercase transition-all ${
         on ? "st-border st-text bg-coal/60" : "border-bone/25 text-bone hover:st-border hover:st-text bg-coal/60"
@@ -52,7 +92,7 @@ export default function FavButton({ slug, name, accent }: Fav) {
       >
         <path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.5-6.6 5 5 0 1 1 7.5 6.6z" />
       </svg>
-      {on ? "En mi dial" : "Añadir a mi dial"}
+      {on ? "En mi dial (sincronizado)" : "Añadir a mi dial"}
     </button>
   );
 }

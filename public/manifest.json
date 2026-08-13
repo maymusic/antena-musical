@@ -1,0 +1,16 @@
+{
+  "name": "Antena Musical — Radios de Artista",
+  "short_name": "Antena Musical",
+  "description": "Tu propia estación de radio online 24/7.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16120e",
+  "theme_color": "#16120e",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -48,10 +48,8 @@ const ROADMAP_IDAS = [
   "Listas de fans curadas por el artista",
   "Colaboraciones cruzadas entre estaciones",
   "Dominios personalizados para cada artista",
-  "Aplicación móvil / PWA con radio en segundo plano",
   "Estadísticas avanzadas por ciudad, fuente y minutos escuchados",
   "Solicitudes de canciones y votaciones de la audiencia",
-  "Cuenta de fan sincronizada para guardar Mi dial en cualquier dispositivo",
 ];
 
 export default async function Home() {

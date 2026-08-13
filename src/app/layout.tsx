@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   description:
     "Antena Musical: crea tu espacio de artista con biografía, galería, videos y tus canciones sonando como una radio online en tiempo real.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://antenamusical.com"),
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {

@@ -3,22 +3,38 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TopBar, Footer } from "@/components/Chrome";
+import { useSession } from "@/components/SessionProvider";
+import { getLocalFavs } from "@/components/FavButton";
 import { IconArrowRight, IconAntenna } from "@/components/icons";
 
-type Fav = { slug: string; name: string; accent: string };
+type Fav = { id?: number; slug: string; name: string; accent?: string };
 
 export default function MiDialPage() {
+  const { session } = useSession();
   const [favs, setFavs] = useState<Fav[] | null>(null);
 
   useEffect(() => {
-    try {
-      setFavs(JSON.parse(localStorage.getItem("antena:mi-dial") ?? "[]"));
-    } catch {
-      setFavs([]);
+    if (session.logged) {
+      fetch("/api/favorites", { cache: "no-store" })
+        .then((r) => r.json())
+        .then((data) => {
+          setFavs(data.favorites ?? []);
+        })
+        .catch(() => setFavs(getLocalFavs()));
+    } else {
+      setFavs(getLocalFavs());
     }
-  }, []);
+  }, [session.logged]);
 
-  const remove = (slug: string) => {
+  const remove = async (slug: string, id?: number) => {
+    if (session.logged && id) {
+      // si está logueado, hacemos POST al API para des-favoritear
+      await fetch("/api/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistId: id }),
+      }).catch(() => {});
+    }
     const next = (favs ?? []).filter((f) => f.slug !== slug);
     localStorage.setItem("antena:mi-dial", JSON.stringify(next));
     setFavs(next);
@@ -33,7 +49,9 @@ export default function MiDialPage() {
           Mi dial<span className="text-signal">.</span>
         </h1>
         <p className="mt-4 text-bone-dim max-w-xl">
-          Las estaciones que guardas con el corazón. Se guardan en este navegador — como las presintonías de un radio.
+          {session.logged
+            ? "Tus estaciones favoritas sincronizadas con tu cuenta en la nube. ¡Disponibles desde cualquier dispositivo!"
+            : "Las estaciones que guardas con el corazón. Inicia sesión para sincronizarlas automáticamente en la nube."}
         </p>
 
         {favs === null ? (
@@ -58,7 +76,7 @@ export default function MiDialPage() {
               <div
                 key={f.slug}
                 className="group border border-inkline bg-panel hard-shadow overflow-hidden"
-                style={{ ["--st" as string]: f.accent }}
+                style={{ ["--st" as string]: f.accent ?? "#FF4D00" }}
               >
                 <Link href={`/${f.slug}`} className="flex items-center gap-4 p-5">
                   <span className="flex items-center justify-center w-12 h-12 rounded-full st-bg text-coal font-display font-extrabold text-xl shrink-0">
@@ -79,7 +97,7 @@ export default function MiDialPage() {
                     Escuchar su radio
                   </Link>
                   <button
-                    onClick={() => remove(f.slug)}
+                    onClick={() => remove(f.slug, f.id)}
                     className="font-tech text-[9px] tracking-widest uppercase text-bone-dim hover:text-signal transition-colors"
                   >
                     Quitar ✕
