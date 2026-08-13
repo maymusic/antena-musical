@@ -34,12 +34,15 @@ export const viewport: Viewport = {
 };
 
 import { SessionProvider } from "@/components/SessionProvider";
+import { GlobalPlayerProvider } from "@/components/GlobalPlayer";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" className={`${display.variable} ${body.variable} ${tech.variable}`}>
       <body className="bg-coal text-bone antialiased font-body">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <GlobalPlayerProvider>{children}</GlobalPlayerProvider>
+        </SessionProvider>
       </body>
     </html>
   );

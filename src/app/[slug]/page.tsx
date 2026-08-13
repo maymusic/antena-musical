@@ -51,6 +51,7 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const station = await getStation(slug);
   if (!station) return { title: "Estación no encontrada — ANTENA MUSICAL" };
   const { artist } = station;
+  const imageUrl = artist.avatarUrl || artist.coverUrl || "";
   return {
     title: `${artist.name} — ANTENA MUSICAL`,
     description: artist.tagline || `${artist.genres.join(", ")} desde ${artist.city || "el dial"}. Escucha su radio en ANTENA MUSICAL.`,
@@ -58,13 +59,13 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
       title: `${artist.name} — su radio online en ANTENA MUSICAL`,
       description: artist.tagline || `Escucha a ${artist.name} en rotación continua, 24/7.`,
       type: "website",
-      images: artist.coverUrl ? [artist.coverUrl] : [],
+      images: imageUrl ? [imageUrl] : [],
     },
     twitter: {
       card: "summary_large_image",
       title: `${artist.name} — ANTENA MUSICAL`,
       description: artist.tagline || "Su radio online, 24/7.",
-      images: artist.coverUrl ? [artist.coverUrl] : [],
+      images: imageUrl ? [imageUrl] : [],
     },
   };
 }
