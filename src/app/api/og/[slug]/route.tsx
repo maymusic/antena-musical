@@ -8,14 +8,14 @@ export const runtime = "nodejs";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
-const PHOTO = 430;
 
 /**
- * Tarjeta de previsualización al compartir en WhatsApp, Facebook, X, etc.
+ * Tarjeta de previsualización para compartir en WhatsApp, Facebook, X, etc.
+ *
  * Se genera en nuestro servidor: así funciona aunque la foto del artista viva
- * en Google Drive, que bloquea el acceso directo de los rastreadores sociales.
+ * en Google Drive (que bloquea el acceso directo de los rastreadores sociales).
  */
-export async function GET(req: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   const rows = await db
@@ -26,23 +26,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const artist = rows[0];
 
   const name = artist?.name ?? "ANTENA MUSICAL";
-  const tagline = artist?.tagline || (artist ? artist.genres.slice(0, 3).join(" · ") : "Radios de artista 24/7");
+  const tagline = artist?.tagline || (artist ? `${artist.genres.slice(0, 3).join(" · ")}` : "Radios de artista");
   const city = artist?.city ?? "";
   const accent = artist?.accent ?? "#FF4D00";
   const verified = artist?.verificationStatus === "approved";
 
+  // Descargamos la foto en el servidor y la incrustamos en base64.
   let photo: string | null = null;
   const source = artist?.avatarUrl || artist?.coverUrl || "";
   if (source) {
     try {
+      // Pedimos una versión pequeña: la tarjeta debe pesar poco o WhatsApp la descarta.
       const light = source.replace(/([?&]sz=)w\d+/, "$1w640");
-      let origin = "";
-      try {
-        origin = new URL(req.url).origin;
-      } catch {
-        /* noop */
-      }
-      const absolute = light.startsWith("http") ? light : `${origin}${light}`;
+      const absolute = light.startsWith("http") ? light : `${getOrigin(_req)}${light}`;
       const res = await fetch(absolute, { signal: AbortSignal.timeout(4000) });
       if (res.ok) {
         const type = res.headers.get("content-type") ?? "image/jpeg";
@@ -57,6 +53,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       /* si falla, se usa el diseño sin foto */
     }
   }
+
+  const PHOTO = 430;
 
   return new ImageResponse(
     (
@@ -73,6 +71,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       >
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 14, backgroundColor: accent, display: "flex" }} />
 
+        {/* Columna de texto */}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 46px 0 72px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 30 }}>
             <div
@@ -148,7 +147,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
             >
               ● ON AIR 24/7
             </div>
-            {city ? <div style={{ display: "flex", fontSize: 20, color: "#b8ab97", letterSpacing: 2 }}>{city}</div> : null}
+            {city ? (
+              <div style={{ display: "flex", fontSize: 20, color: "#b8ab97", letterSpacing: 2 }}>{city}</div>
+            ) : null}
           </div>
 
           <div style={{ display: "flex", fontSize: 26, color: accent, fontWeight: 700, letterSpacing: 1 }}>
@@ -156,6 +157,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
           </div>
         </div>
 
+        {/* Retrato del artista */}
         <div style={{ display: "flex", padding: "0 68px 0 0" }}>
           <div
             style={{
@@ -182,8 +184,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       width: WIDTH,
       height: HEIGHT,
       headers: {
+        // Las redes sociales cachean la tarjeta; esto evita regenerarla en cada visita.
         "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
       },
     }
   );
+}
+
+function getOrigin(req: Request): string {
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return "";
+  }
 }

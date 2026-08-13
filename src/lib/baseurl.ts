@@ -1,8 +1,9 @@
 /**
  * Dominio público real de la instalación.
  *
- * Las tarjetas de WhatsApp/Facebook/X necesitan URLs absolutas que existan.
- * Si aún no hay dominio propio conectado, usa el que Vercel asigna.
+ * Importante para compartir: las tarjetas de WhatsApp/Facebook/X necesitan URLs
+ * absolutas que existan de verdad. Si aún no hay dominio propio conectado,
+ * usamos el que Vercel asigna automáticamente.
  */
 export function getBaseUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_BASE_URL?.trim();

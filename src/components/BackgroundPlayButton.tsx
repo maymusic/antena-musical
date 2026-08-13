@@ -4,7 +4,7 @@ import { useGlobalPlayer, type QueueTrack } from "./GlobalPlayer";
 
 /**
  * Enciende la emisión persistente: sigue sonando mientras el oyente navega
- * por Antena Musical y en segundo plano en el móvil.
+ * por el resto de Antena Musical y en segundo plano en el móvil.
  */
 export default function BackgroundPlayButton({
   tracks,
@@ -22,7 +22,7 @@ export default function BackgroundPlayButton({
   const { start, stop, isActive, activeSlug, playing } = useGlobalPlayer();
   const mine = isActive && activeSlug === artistSlug;
 
-  if (!tracks || tracks.length === 0) return null;
+  if (tracks.length === 0) return null;
 
   return (
     <button
@@ -37,14 +37,7 @@ export default function BackgroundPlayButton({
       title={mine ? "Detener la emisión de fondo" : "Sigue sonando mientras navegas"}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-        {mine ? (
-          <>
-            <rect x="6" y="5" width="4" height="14" />
-            <rect x="14" y="5" width="4" height="14" />
-          </>
-        ) : (
-          <path d="M7 4.5v15l13-7.5L7 4.5z" fill="currentColor" stroke="none" />
-        )}
+        {mine ? <><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></> : <path d="M7 4.5v15l13-7.5L7 4.5z" fill="currentColor" stroke="none" />}
       </svg>
       {mine ? (playing ? "Sonando en segundo plano" : "Emisión activa") : "Escuchar en segundo plano"}
     </button>
