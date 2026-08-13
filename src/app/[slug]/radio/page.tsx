@@ -7,6 +7,7 @@ import { artists, tracks } from "@/db/schema";
 import { fakeFrequency } from "@/lib/parse";
 import { Footer } from "@/components/Chrome";
 import RadioDeck from "@/components/RadioDeck";
+import BackgroundListen from "@/components/BackgroundListen";
 import Reveal from "@/components/Reveal";
 import { IconAntenna, IconArrowRight, IconVerified, PlatformChip, platformLabel, VuMeter } from "@/components/icons";
 
@@ -93,6 +94,16 @@ export default async function ArtistRadioPage({ params }: Ctx) {
               ? "Pulsa «sintonizar» y su música suena en cadena, sola, sin cortes. Comparte este enlace: es tu radio online, 24/7."
               : "Aún no hay pistas reproducibles — añade enlaces de YouTube, Spotify, SoundCloud o Deezer desde el panel de control."}
           </p>
+        </Reveal>
+
+        <Reveal delay={70} className="mb-5">
+          <BackgroundListen
+            tracks={stationTracks}
+            artistName={artist.name}
+            artistSlug={artist.slug}
+            accent={artist.accent}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 st-bg text-coal font-display font-extrabold hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"
+          />
         </Reveal>
 
         <Reveal delay={80}>
