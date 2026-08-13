@@ -2,12 +2,11 @@ import type { MetadataRoute } from "next";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { artists } from "@/db/schema";
-import { getBaseUrl } from "@/lib/baseurl";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = getBaseUrl();
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://antenamusical.com";
   const rows = await db.select({ slug: artists.slug }).from(artists);
 
   return [

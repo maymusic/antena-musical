@@ -6,14 +6,13 @@ import { db } from "@/db";
 import { artists, images, shows, tracks } from "@/db/schema";
 import { fakeFrequency, formatDate, isPlayable } from "@/lib/parse";
 import { normalizeGoogleDriveFile } from "@/lib/drivefile";
-import { getBaseUrl } from "@/lib/baseurl";
 import { Footer } from "@/components/Chrome";
 import RadioDeck from "@/components/RadioDeck";
 import Gallery from "@/components/Gallery";
 import PhotoReel from "@/components/PhotoReel";
 import VideoGrid from "@/components/VideoGrid";
 import NotifyBell from "@/components/NotifyBell";
-import BackgroundPlayButton from "@/components/BackgroundPlayButton";
+import BackgroundListen from "@/components/BackgroundListen";
 import ShareButtons from "@/components/ShareButtons";
 import FavButton from "@/components/FavButton";
 import ChatPanel from "@/components/ChatPanel";
@@ -53,33 +52,23 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const station = await getStation(slug);
   if (!station) return { title: "Estación no encontrada — ANTENA MUSICAL" };
   const { artist } = station;
-  const base = getBaseUrl();
-  const stationUrl = `${base}/${artist.slug}`;
-  // Tarjeta generada por nosotros: funciona aunque la foto viva en Google Drive.
-  const ogImage = `${base}/api/og/${artist.slug}`;
-  const description =
-    artist.tagline ||
-    `${artist.genres.slice(0, 3).join(", ")}${artist.city ? ` desde ${artist.city}` : ""}. Escucha su radio online 24/7 en Antena Musical.`;
-
+  // Servimos la imagen por nuestro proxy: los rastreadores de redes no leen Google Drive.
+  const hasImage = Boolean(artist.avatarUrl || artist.coverUrl);
+  const ogImage = hasImage ? [{ url: `/api/artists/${artist.id}/og-image`, width: 1200, height: 1200, alt: artist.name }] : [];
   return {
-    metadataBase: new URL(base),
     title: `${artist.name} — ANTENA MUSICAL`,
-    description,
-    alternates: { canonical: stationUrl },
+    description: artist.tagline || `${artist.genres.join(", ")} desde ${artist.city || "el dial"}. Escucha su radio en ANTENA MUSICAL.`,
     openGraph: {
       title: `${artist.name} — su radio online en ANTENA MUSICAL`,
-      description,
-      type: "profile",
-      url: stationUrl,
-      siteName: "Antena Musical",
-      locale: "es_ES",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${artist.name} en Antena Musical` }],
+      description: artist.tagline || `Escucha a ${artist.name} en rotación continua, 24/7.`,
+      type: "website",
+      images: ogImage,
     },
     twitter: {
       card: "summary_large_image",
       title: `${artist.name} — ANTENA MUSICAL`,
-      description,
-      images: [ogImage],
+      description: artist.tagline || "Su radio online, 24/7.",
+      images: ogImage,
     },
   };
 }
@@ -99,10 +88,6 @@ export default async function StationPage({ params }: Ctx) {
   const memberSince = new Date(artist.createdAt).toLocaleDateString("es-ES", { month: "short", year: "numeric" });
   const isVerified = artist.verificationStatus === "approved";
   const driveKit = artist.presskitUrl ? normalizeGoogleDriveFile(artist.presskitUrl) : null;
-  // Solo YouTube puede sonar en segundo plano sin que el navegador lo bloquee.
-  const backgroundQueue = stationTracks
-    .filter((t) => t.platform === "youtube")
-    .map((t) => ({ id: t.id, title: t.title, externalId: t.externalId }));
   const youtubeVideos = stationTracks.filter((t) => t.platform === "youtube");
   const lyricTracks = stationTracks.filter((t) => t.lyrics.trim().length > 0);
   const latestTrackId = stationTracks.reduce((max, t) => Math.max(max, t.id), 0);
@@ -236,8 +221,8 @@ export default async function StationPage({ params }: Ctx) {
                 >
                   <IconPlay className="w-5 h-5" /> Escuchar la radio
                 </a>
-                <BackgroundPlayButton
-                  tracks={backgroundQueue}
+                <BackgroundListen
+                  tracks={stationTracks}
                   artistName={artist.name}
                   artistSlug={artist.slug}
                   accent={artist.accent}
