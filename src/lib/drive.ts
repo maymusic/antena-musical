@@ -28,10 +28,9 @@ export function normalizeGoogleDriveImage(raw: string): DriveImage | null {
 
   return {
     id,
-    displayUrl: `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`,
+    displayUrl: `https://lh3.googleusercontent.com/d/${encodeURIComponent(id)}=w1600`,
     shareUrl: `https://drive.google.com/file/d/${encodeURIComponent(id)}/view?usp=sharing`,
   };
-}
 
 export function isGoogleDriveImageUrl(value: string): boolean {
   return /^(https:\/\/drive\.google\.com\/(?:thumbnail|uc)|https:\/\/docs\.google\.com\/)/i.test(value);
