@@ -1,24 +1,28 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { IconAntenna, IconArrowRight } from "./icons";
+import { IconAntenna, IconArrowRight, IconClose } from "./icons";
 
 import { useSession } from "./SessionProvider";
 
 export function TopBar({ solid = false }: { solid?: boolean }) {
   const { session, logout } = useSession();
+  const [menu, setMenu] = useState(false);
+  const close = () => setMenu(false);
+
   return (
     <header
       className={`sticky top-0 z-[70] border-b border-inkline backdrop-blur-md ${
         solid ? "bg-coal/95" : "bg-coal/80"
       }`}
     >
-      <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-6">
-        <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-          <span className="flex items-center justify-center w-9 h-9 bg-signal text-coal group-hover:rotate-[-6deg] transition-transform">
+      <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-3 sm:gap-6">
+        <Link href="/" onClick={close} className="flex items-center gap-2.5 group shrink-0 min-w-0">
+          <span className="flex items-center justify-center w-9 h-9 bg-signal text-coal group-hover:rotate-[-6deg] transition-transform shrink-0">
             <IconAntenna className="w-5 h-5" />
           </span>
-          <span className="font-display font-extrabold text-xl tracking-tight leading-none">
+          <span className="font-display font-extrabold text-base sm:text-xl tracking-tight leading-none truncate">
             ANTENA MUSICAL
             <span className="block font-tech font-normal text-[8px] tracking-[0.4em] text-bone-dim">
               RADIOS DE ARTISTA
@@ -65,19 +69,82 @@ export function TopBar({ solid = false }: { solid?: boolean }) {
           <div className="ml-auto flex items-center gap-3">
             <Link
               href="/login"
-              className="font-tech text-[11px] tracking-[0.18em] uppercase text-bone-dim hover:text-signal transition-colors"
+              className="hidden sm:inline font-tech text-[11px] tracking-[0.18em] uppercase text-bone-dim hover:text-signal transition-colors"
             >
               Entrar
             </Link>
             <Link
               href="/crear"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-signal text-coal font-display font-bold text-sm hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 bg-signal text-coal font-display font-bold text-sm hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"
             >
               Crear mi estación <IconArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         )}
+
+        {/* Botón de menú: solo en móvil, donde la navegación no cabe. */}
+        <button
+          onClick={() => setMenu((v) => !v)}
+          className="md:hidden ml-auto shrink-0 p-2 border border-inkline text-bone hover:border-signal hover:text-signal transition-colors"
+          aria-label={menu ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menu}
+        >
+          {menu ? (
+            <IconClose className="w-5 h-5" />
+          ) : (
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          )}
+        </button>
       </div>
+
+      {/* ===== Menú desplegable (móvil) ===== */}
+      {menu && (
+        <div className="md:hidden border-t border-inkline bg-coal/98 backdrop-blur-md">
+          <nav className="mx-auto max-w-6xl px-4 py-3 flex flex-col font-tech text-[12px] tracking-[0.18em] uppercase">
+            <Link href="/radio" onClick={close} className="flex items-center gap-2 py-3 border-b border-inkline/60 text-bone hover:text-signal transition-colors">
+              <span className="w-1.5 h-1.5 rounded-full bg-signal animate-blink" /> En vivo
+            </Link>
+            <a href="/#estaciones" onClick={close} className="py-3 border-b border-inkline/60 text-bone-dim hover:text-signal transition-colors">Estaciones</a>
+            <Link href="/buscar" onClick={close} className="py-3 border-b border-inkline/60 text-bone-dim hover:text-signal transition-colors">Buscar</Link>
+            <Link href="/mi-dial" onClick={close} className="py-3 border-b border-inkline/60 text-bone-dim hover:text-signal transition-colors">Mi dial</Link>
+            <a href="/#como-funciona" onClick={close} className="py-3 border-b border-inkline/60 text-bone-dim hover:text-signal transition-colors">Cómo funciona</a>
+
+            {session.logged ? (
+              <div className="flex flex-col gap-2 pt-4">
+                {session.role === "admin" && (
+                  <Link href="/admin" onClick={close} className="px-4 py-3 border border-amber/50 text-amber text-center font-semibold hover:bg-amber hover:text-coal transition-colors">
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href={session.artistSlug ? `/${session.artistSlug}/editar` : "/crear"}
+                  onClick={close}
+                  className="px-4 py-3 border border-inkline text-bone text-center font-semibold hover:border-signal hover:text-signal transition-colors"
+                >
+                  {session.artistSlug ? "Mi estación" : "Crear estación"}
+                </Link>
+                <button
+                  onClick={() => { close(); logout(); }}
+                  className="px-4 py-3 text-bone-dim hover:text-signal transition-colors"
+                >
+                  Salir
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 pt-4">
+                <Link href="/login" onClick={close} className="px-4 py-3 border border-inkline text-bone text-center font-semibold hover:border-signal hover:text-signal transition-colors">
+                  Entrar
+                </Link>
+                <Link href="/crear" onClick={close} className="px-4 py-3 bg-signal text-coal text-center font-display font-bold hover:brightness-110 transition-all">
+                  Crear mi estación
+                </Link>
+              </div>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

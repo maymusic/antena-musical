@@ -28,12 +28,20 @@
 
 html {
   scroll-behavior: smooth;
+  /* Nada debe desbordar a lo ancho: en el móvil eso recortaba la página. */
+  overflow-x: hidden;
+  /* Que el anclaje #radio no quede debajo de la barra fija. */
+  scroll-padding-top: 5rem;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background-color: var(--color-coal);
   color: var(--color-bone);
   font-family: var(--font-body);
+  overflow-x: clip;
+  /* Respeta la barra de gestos / notch en móviles. */
+  padding-bottom: env(safe-area-inset-bottom);
   background-image:
     radial-gradient(1100px 500px at 85% -10%, rgba(255, 77, 0, 0.09), transparent 60%),
     radial-gradient(900px 480px at -10% 30%, rgba(255, 176, 0, 0.05), transparent 55%),

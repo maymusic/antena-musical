@@ -228,8 +228,12 @@ export default async function StationPage({ params }: Ctx) {
                 </span>
               </div>
             </Reveal>
-            <Reveal delay={160} className="shrink-0">
-              <div className="flex md:flex-col gap-3">
+            <Reveal delay={160} className="shrink-0 w-full md:w-auto">
+              {/*
+                En el móvil los botones van en columna a todo el ancho.
+                Antes era una fila y se salían de la pantalla: eso recortaba la página.
+              */}
+              <div className="flex flex-col gap-3 w-full md:w-auto">
                 <a
                   href="#radio"
                   className="inline-flex items-center justify-center gap-2.5 px-7 py-4 st-bg text-coal font-display font-extrabold text-lg hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"

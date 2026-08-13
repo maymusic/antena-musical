@@ -57,31 +57,45 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
 
   return (
     <div style={{ ["--st" as string]: accent }}>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {images.map((img, i) => (
-          <button
-            key={img.id}
-            onClick={() => setOpen(i)}
-            className="group relative aspect-[4/3] overflow-hidden border border-inkline bg-coal-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st)]"
-          >
-            {/* Todas las tarjetas usan el mismo formato; la foto completa se ve al abrirla. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={img.url}
-              alt={img.caption || `Foto ${i + 1}`}
-              loading="lazy"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-              <span className="font-tech text-[11px] tracking-wider text-bone">
-                {img.caption || `CAPTURA ${String(i + 1).padStart(2, "0")}`}
+      {/*
+        Rejilla de fotos a buen tamaño:
+        · móvil  → 1 columna a todo el ancho (antes eran 2 diminutas)
+        · tablet → 2 columnas
+        · escritorio → 3 columnas, con la primera foto destacada al doble
+        El pie de foto se ve siempre en táctil (no hay «hover» en el móvil).
+      */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        {images.map((img, i) => {
+          const featured = i === 0 && images.length > 1;
+          return (
+            <button
+              key={img.id}
+              onClick={() => setOpen(i)}
+              className={`group relative overflow-hidden border border-inkline bg-coal-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--st)] ${
+                featured
+                  ? "sm:col-span-2 aspect-[4/3] sm:aspect-[16/9]"
+                  : "aspect-[4/3]"
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img.url}
+                alt={img.caption || `Foto ${i + 1}`}
+                loading={i < 3 ? "eager" : "lazy"}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+              />
+              {/* Pie: siempre legible en móvil, aparece al pasar el ratón en escritorio. */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-3 pt-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
+                <span className="font-tech text-[11px] tracking-wider text-bone line-clamp-2">
+                  {img.caption || `CAPTURA ${String(i + 1).padStart(2, "0")}`}
+                </span>
+              </div>
+              <span className="absolute top-2 left-2 font-tech text-[10px] px-1.5 py-0.5 bg-coal/80 text-bone-dim border border-inkline opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                VER COMPLETA +
               </span>
-            </div>
-            <span className="absolute top-2 left-2 font-tech text-[10px] px-1.5 py-0.5 bg-coal/80 text-bone-dim border border-inkline opacity-0 group-hover:opacity-100 transition-opacity">
-              VER COMPLETA +
-            </span>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
       {/* ===== VISOR: imagen completa, nunca recortada ===== */}
