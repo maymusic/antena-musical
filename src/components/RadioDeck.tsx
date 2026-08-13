@@ -58,6 +58,7 @@ export default function RadioDeck({
   const [started, setStarted] = useState(false);
 
   const playerRef = useRef<any>(null);
+  const pendingVideoId = useRef<string | null>(null);
   const iframeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const iframeEndsAt = useRef<number>(0);
   const shuffleRef = useRef(shuffle);
@@ -92,14 +93,41 @@ export default function RadioDeck({
     let cancelled = false;
     loadYouTubeApi().then((YT) => {
       if (cancelled) return;
+      // El contenedor debe tener tamaño real antes de crear el player;
+      // si se crea con opacity-0 o 0×0, YouTube deja un iframe negro permanente.
       playerRef.current = new YT.Player(`yt-target-${artistId}`, {
         width: "100%",
         height: "100%",
-        playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          autoplay: 0,
+          controls: 0,
+          fs: 0,
+          iv_load_policy: 3,
+          disablekb: 1,
+        },
         events: {
           onReady: () => {
+            if (cancelled) return;
             setYtReady(true);
-            playerRef.current?.setVolume(volume);
+            try {
+              playerRef.current?.setVolume?.(volume);
+            } catch {
+              /* noop */
+            }
+            // Si el usuario ya había pulsado play antes de que el API estuviera listo
+            if (pendingVideoId.current) {
+              const id = pendingVideoId.current;
+              pendingVideoId.current = null;
+              try {
+                playerRef.current?.loadVideoById?.(id);
+                playerRef.current?.playVideo?.();
+              } catch {
+                /* noop */
+              }
+            }
           },
           onStateChange: (e: any) => {
             if (e.data === YT.PlayerState.ENDED) {
@@ -107,14 +135,21 @@ export default function RadioDeck({
             } else if (e.data === YT.PlayerState.PLAYING) {
               setPlaying(true);
             } else if (e.data === YT.PlayerState.PAUSED) {
-              setPlaying((p) => (indexRef.current !== null && playable[indexRef.current]?.platform === "youtube" ? false : p));
+              setPlaying((p) =>
+                indexRef.current !== null && playable[indexRef.current]?.platform === "youtube" ? false : p
+              );
             }
+          },
+          onError: () => {
+            // Video no disponible / restringido → saltar a la siguiente
+            advance(1, true);
           },
         },
       });
     });
     return () => {
       cancelled = true;
+      pendingVideoId.current = null;
       try {
         playerRef.current?.destroy();
       } catch {
@@ -188,9 +223,22 @@ export default function RadioDeck({
       fetch(`/api/tracks/${t.id}/play`, { method: "POST" }).catch(() => {});
       if (t.platform === "youtube") {
         setProgress({ cur: 0, dur: 0 });
+        const load = () => {
+          try {
+            playerRef.current?.loadVideoById?.(t.externalId);
+            playerRef.current?.setVolume?.(volume);
+            // Algunos navegadores bloquean autoplay hasta el gesto del usuario;
+            // playVideo() aquí aprovecha el click que acaba de ocurrir.
+            playerRef.current?.playVideo?.();
+          } catch {
+            /* noop */
+          }
+        };
         if (playerRef.current?.loadVideoById) {
-          playerRef.current.loadVideoById(t.externalId);
-          playerRef.current.setVolume?.(volume);
+          load();
+        } else {
+          // API aún no lista → encolar y cargar en onReady
+          pendingVideoId.current = t.externalId;
         }
       } else {
         // Embed (Spotify / SoundCloud / Deezer): iframe con autoplay + avance automático.
@@ -295,15 +343,22 @@ export default function RadioDeck({
         <div className="grid lg:grid-cols-[1.5fr_1fr]">
           {/* pantalla */}
           <div className="relative border-b lg:border-b-0 lg:border-r border-inkline">
-            <div className="relative aspect-video bg-black">
+            <div className="relative aspect-video bg-black overflow-hidden">
+              {/*
+                El contenedor de YouTube DEBE tener tamaño real (w-full h-full) desde el
+                primer render. Si se crea el player con opacity-0 o 0×0, YouTube deja
+                un iframe negro permanente. La visibilidad se controla con un overlay.
+              */}
               <div
                 id={`yt-target-${artistId}`}
-                className={`absolute inset-0 transition-opacity duration-500 ${
-                  current?.platform === "youtube" && started ? "opacity-100" : "opacity-0"
-                }`}
+                className="absolute inset-0 w-full h-full"
+                style={{
+                  // Ocultar visualmente solo cuando no es YouTube o aún no se ha sintonizado
+                  visibility: current?.platform === "youtube" && started ? "visible" : "hidden",
+                }}
               />
               {current && isIframe && started && (
-                <div className="absolute inset-0 flex flex-col">
+                <div className="absolute inset-0 flex flex-col z-10">
                   <div className="flex items-center gap-2 px-3 py-2 bg-amber text-coal shrink-0">
                     <span className="font-tech text-[10px] tracking-[0.2em] uppercase font-bold">
                       ▶ Pulsa play dentro del panel de {platformLabel(current.platform)}
@@ -326,7 +381,7 @@ export default function RadioDeck({
                 <button
                   onClick={() => playable.length > 0 && playAt(0)}
                   disabled={playable.length === 0}
-                  className="absolute inset-0 w-full group text-left disabled:cursor-not-allowed"
+                  className="absolute inset-0 w-full z-20 group text-left disabled:cursor-not-allowed"
                 >
                   {coverUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element

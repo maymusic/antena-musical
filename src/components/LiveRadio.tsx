@@ -271,22 +271,26 @@ export default function LiveRadio({
       <div className="grid lg:grid-cols-[1.45fr_1fr]">
         {/* pantalla */}
         <div className="border-b lg:border-b-0 lg:border-r border-inkline">
-          <div className="relative aspect-video bg-black">
-            {/* contenedor persistente de YouTube */}
+          <div className="relative aspect-video bg-black overflow-hidden">
+            {/*
+              Contenedor de YouTube siempre con tamaño real.
+              Si se crea el player dentro de un nodo con opacity-0, YouTube
+              genera un iframe de 0×0 y la pantalla queda negra permanentemente.
+            */}
             <div
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                tuned && current.platform === "youtube" ? "opacity-100" : "opacity-0 pointer-events-none"
-              }`}
-            >
-              <div id="antena-central-yt" className="w-full h-full" />
-            </div>
+              id="antena-central-yt"
+              className="absolute inset-0 w-full h-full"
+              style={{
+                visibility: tuned && current.platform === "youtube" ? "visible" : "hidden",
+              }}
+            />
 
             {tuned && current.platform !== "youtube" && (
               <iframe
                 key={current.trackId}
                 title={`${current.title} — ${current.platform}`}
                 src={getEmbedUrl(current.platform, current.kind, current.externalId, true) ?? ""}
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 w-full h-full z-10"
                 style={{ border: 0 }}
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               />
