@@ -25,7 +25,10 @@ export const metadata: Metadata = {
   title: "Antena Musical — Tu propia estación de radio online",
   description:
     "Antena Musical: crea tu espacio de artista con biografía, galería, videos y tus canciones sonando como una radio online en tiempo real.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://antenamusical.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://antenamusical.com")
+  ),
   manifest: "/manifest.json",
 };
 

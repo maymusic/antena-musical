@@ -12,6 +12,7 @@ import Gallery from "@/components/Gallery";
 import PhotoReel from "@/components/PhotoReel";
 import VideoGrid from "@/components/VideoGrid";
 import NotifyBell from "@/components/NotifyBell";
+import BackgroundListen from "@/components/BackgroundListen";
 import ShareButtons from "@/components/ShareButtons";
 import FavButton from "@/components/FavButton";
 import ChatPanel from "@/components/ChatPanel";
@@ -51,7 +52,9 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const station = await getStation(slug);
   if (!station) return { title: "Estación no encontrada — ANTENA MUSICAL" };
   const { artist } = station;
-  const imageUrl = artist.avatarUrl || artist.coverUrl || "";
+  // Servimos la imagen por nuestro proxy: los rastreadores de redes no leen Google Drive.
+  const hasImage = Boolean(artist.avatarUrl || artist.coverUrl);
+  const ogImage = hasImage ? [{ url: `/api/artists/${artist.id}/og-image`, width: 1200, height: 1200, alt: artist.name }] : [];
   return {
     title: `${artist.name} — ANTENA MUSICAL`,
     description: artist.tagline || `${artist.genres.join(", ")} desde ${artist.city || "el dial"}. Escucha su radio en ANTENA MUSICAL.`,
@@ -59,13 +62,13 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
       title: `${artist.name} — su radio online en ANTENA MUSICAL`,
       description: artist.tagline || `Escucha a ${artist.name} en rotación continua, 24/7.`,
       type: "website",
-      images: imageUrl ? [imageUrl] : [],
+      images: ogImage,
     },
     twitter: {
       card: "summary_large_image",
       title: `${artist.name} — ANTENA MUSICAL`,
       description: artist.tagline || "Su radio online, 24/7.",
-      images: imageUrl ? [imageUrl] : [],
+      images: ogImage,
     },
   };
 }
@@ -218,6 +221,12 @@ export default async function StationPage({ params }: Ctx) {
                 >
                   <IconPlay className="w-5 h-5" /> Escuchar la radio
                 </a>
+                <BackgroundListen
+                  tracks={stationTracks}
+                  artistName={artist.name}
+                  artistSlug={artist.slug}
+                  accent={artist.accent}
+                />
                 <NotifyBell
                   artistId={artist.id}
                   artistName={artist.name}
