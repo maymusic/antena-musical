@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
-import { getBaseUrl } from "@/lib/baseurl";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = getBaseUrl();
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://antenamusical.com";
   return {
     rules: { userAgent: "*", allow: "/", disallow: ["/api/", "/logout"] },
     sitemap: `${base}/sitemap.xml`,

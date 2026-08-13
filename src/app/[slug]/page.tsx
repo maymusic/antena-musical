@@ -6,14 +6,12 @@ import { db } from "@/db";
 import { artists, images, shows, tracks } from "@/db/schema";
 import { fakeFrequency, formatDate, isPlayable } from "@/lib/parse";
 import { normalizeGoogleDriveFile } from "@/lib/drivefile";
-import { getBaseUrl } from "@/lib/baseurl";
 import { Footer } from "@/components/Chrome";
 import RadioDeck from "@/components/RadioDeck";
 import Gallery from "@/components/Gallery";
 import PhotoReel from "@/components/PhotoReel";
 import VideoGrid from "@/components/VideoGrid";
 import NotifyBell from "@/components/NotifyBell";
-import BackgroundListen from "@/components/BackgroundListen";
 import ShareButtons from "@/components/ShareButtons";
 import FavButton from "@/components/FavButton";
 import ChatPanel from "@/components/ChatPanel";
@@ -53,33 +51,21 @@ export async function generateMetadata({ params }: Ctx): Promise<Metadata> {
   const station = await getStation(slug);
   if (!station) return { title: "Estación no encontrada — ANTENA MUSICAL" };
   const { artist } = station;
-  // La tarjeta se genera en nuestro servidor: los rastreadores de redes no leen Google Drive.
-  const base = getBaseUrl();
-  const stationUrl = `${base}/${artist.slug}`;
-  const ogImage = `${base}/api/og/${artist.slug}`;
-  const description =
-    artist.tagline ||
-    `${artist.genres.slice(0, 3).join(", ")}${artist.city ? ` desde ${artist.city}` : ""}. Escucha su radio online 24/7 en Antena Musical.`;
-
+  const imageUrl = artist.avatarUrl || artist.coverUrl || "";
   return {
-    metadataBase: new URL(base),
     title: `${artist.name} — ANTENA MUSICAL`,
-    description,
-    alternates: { canonical: stationUrl },
+    description: artist.tagline || `${artist.genres.join(", ")} desde ${artist.city || "el dial"}. Escucha su radio en ANTENA MUSICAL.`,
     openGraph: {
       title: `${artist.name} — su radio online en ANTENA MUSICAL`,
-      description,
-      type: "profile",
-      url: stationUrl,
-      siteName: "Antena Musical",
-      locale: "es_ES",
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${artist.name} en Antena Musical` }],
+      description: artist.tagline || `Escucha a ${artist.name} en rotación continua, 24/7.`,
+      type: "website",
+      images: imageUrl ? [imageUrl] : [],
     },
     twitter: {
       card: "summary_large_image",
       title: `${artist.name} — ANTENA MUSICAL`,
-      description,
-      images: [ogImage],
+      description: artist.tagline || "Su radio online, 24/7.",
+      images: imageUrl ? [imageUrl] : [],
     },
   };
 }
@@ -232,12 +218,6 @@ export default async function StationPage({ params }: Ctx) {
                 >
                   <IconPlay className="w-5 h-5" /> Escuchar la radio
                 </a>
-                <BackgroundListen
-                  tracks={stationTracks}
-                  artistName={artist.name}
-                  artistSlug={artist.slug}
-                  accent={artist.accent}
-                />
                 <NotifyBell
                   artistId={artist.id}
                   artistName={artist.name}
