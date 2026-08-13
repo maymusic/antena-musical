@@ -391,9 +391,7 @@ export default function LiveRadio({
             </div>
             <p className="font-tech text-[9px] tracking-wider text-bone-dim">
               PARRILLA ▸ {state.totalSlots} pistas de la red en bucle ·{" "}
-              {current.platform !== "youtube"
-                ? "las pistas embebidas (Spotify, SoundCloud, Deezer) entran desde su inicio — el embed no permite saltar"
-                : "estás escuchando en el mismo segundo que el resto de oyentes"}
+              estás escuchando en el mismo segundo que el resto de oyentes
             </p>
           </div>
         </div>

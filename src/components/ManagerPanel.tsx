@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Artist, ImageRow, Show, Track } from "@/db/schema";
-import { ACCENTS, MAX_GENRES, SOCIAL_FIELDS, formatDate, parseDurationInput, parseMusicUrl } from "@/lib/parse";
+import { ACCENTS, MAX_GENRES, SOCIAL_FIELDS, formatDate, isPlayable, parseDurationInput, parseMusicUrl } from "@/lib/parse";
 import GenrePicker from "./GenrePicker";
 import {
   IconCalendar,
@@ -521,8 +521,17 @@ function TracksTab({
           </button>
         </div>
         {err && <p className="text-signal text-sm font-semibold">{err}</p>}
+        {parsed?.ok && parsed.platform !== "youtube" && isPlayable(parsed.platform) && (
+          <p className="border border-amber/50 bg-amber/10 px-3 py-2 text-xs text-amber leading-relaxed">
+            ⚠ {platformLabel(parsed.platform)} se muestra dentro de tu estación, pero su reproductor{" "}
+            <strong>no arranca solo</strong>: el oyente debe pulsar ▶. Para que tu radio suene sin cortes, añade también
+            tus canciones en YouTube.
+          </p>
+        )}
         <p className="font-tech text-[9px] tracking-wider text-bone-dim leading-relaxed">
-          EN LA ROTACIÓN ▸ YouTube · Spotify · SoundCloud · Deezer
+          SUENA SOLO ▸ YouTube (recomendado para tu radio 24/7)
+          <br />
+          SUENA CON PLAY MANUAL ▸ Spotify · SoundCloud · Deezer
           <br />
           ESCUCHA EXTERNA ▸ Apple Music · Bandcamp · Tidal · Amazon Music · Audiomack · cualquier otro enlace
         </p>
@@ -1177,6 +1186,8 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
   const [tab, setTab] = useState<TabId>("galeria");
   const [toast, setToast] = useState("");
   const [authed, setAuthed] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [sessionEmail, setSessionEmail] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
@@ -1186,6 +1197,30 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+
+  /**
+   * Si ya hay sesión válida (cookie), entra directo: no vuelve a pedir contraseña.
+   * El dueño de la estación entra siempre; administración también puede editar.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        if (d.logged && (d.artistId === artist.id || d.role === "admin")) {
+          setAuthed(true);
+          setSessionEmail(d.email ?? "");
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCheckingSession(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [artist.id]);
 
   useEffect(() => {
     if (!toast) return;
@@ -1230,10 +1265,11 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
         setGateError(data.error || "Credenciales incorrectas.");
         return;
       }
-      if (data.artistSlug && data.artistSlug !== artist.slug) {
+      if (data.role !== "admin" && data.artistSlug && data.artistSlug !== artist.slug) {
         setGateError(`Este usuario pertenece a /${data.artistSlug}, no a /${artist.slug}.`);
         return;
       }
+      setSessionEmail(data.email ?? "");
       setAuthed(true);
     } catch {
       setGateError("Error de red. Inténtalo otra vez.");
@@ -1241,6 +1277,16 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
       setBusy(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="max-w-md mx-auto border border-inkline bg-panel p-10 text-center">
+        <p className="font-tech text-[11px] tracking-[0.3em] uppercase text-bone-dim animate-blink">
+          Comprobando tu sesión…
+        </p>
+      </div>
+    );
+  }
 
   if (!authed) {
     return (
@@ -1328,6 +1374,11 @@ export default function ManagerPanel({ initial }: { initial: Full }) {
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {sessionEmail && (
+            <span className="hidden md:flex items-center gap-1.5 font-tech text-[9px] tracking-[0.2em] uppercase text-bone-dim">
+              <span className="w-1.5 h-1.5 rounded-full bg-onair" /> {sessionEmail}
+            </span>
+          )}
           <a
             href={`/${artist.slug}/presskit`}
             className="inline-flex items-center gap-2 px-4 py-2.5 border border-inkline text-sm font-semibold text-bone-dim hover:text-bone hover:border-bone/40 transition-colors"

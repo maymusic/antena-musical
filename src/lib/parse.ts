@@ -159,13 +159,19 @@ export function parseMusicUrl(raw: string): ParsedTrack {
     return { ok: false, error: "El enlace debe empezar con http:// o https://" };
   }
 
-  // YouTube
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{6,20})/);
+  // YouTube — los IDs de video tienen exactamente 11 caracteres
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/);
   if (yt) return { ok: true, platform: "youtube", kind: "video", externalId: yt[1] };
+  if (/youtube\.com|youtu\.be/i.test(url)) {
+    return { ok: false, error: "Ese enlace de YouTube no trae un ID de video válido. Copia la URL desde «Compartir»." };
+  }
 
-  // Spotify
-  const sp = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode)\/([\w]+)/i);
+  // Spotify — los IDs tienen exactamente 22 caracteres base62
+  const sp = url.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(track|album|playlist|episode)\/([A-Za-z0-9]{22})/i);
   if (sp) return { ok: true, platform: "spotify", kind: sp[1].toLowerCase(), externalId: sp[2] };
+  if (/open\.spotify\.com/i.test(url)) {
+    return { ok: false, error: "Ese enlace de Spotify no es válido. En Spotify: Compartir → Copiar enlace de la canción." };
+  }
 
   // SoundCloud (guardamos la URL completa, el embed la necesita)
   const sc = url.match(/soundcloud\.com\/([^\/?#]+\/[^\/?#]+)/i);

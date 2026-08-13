@@ -26,13 +26,15 @@ export function verifyToken(token: string): { userId: number; email: string; art
   }
 }
 
+const secureFlag = process.env.NODE_ENV === "production" ? "; Secure" : "";
+
 export function sessionCookie(token: string, maxAgeDays = 30): string {
   const maxAge = maxAgeDays * 24 * 60 * 60;
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secureFlag}`;
 }
 
 export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secureFlag}`;
 }
 
 export function getEmailFromCookie(cookieHeader: string | null): string | null {

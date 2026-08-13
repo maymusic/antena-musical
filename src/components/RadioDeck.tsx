@@ -34,8 +34,18 @@ export default function RadioDeck({
   coverUrl: string;
   initialListeners: number;
 }) {
-  /** Solo las plataformas reproducibles entran en la rotación. */
-  const playable = useMemo(() => tracks.filter((t) => isPlayable(t.platform)), [tracks]);
+  /**
+   * Modo continuo: solo YouTube suena solo de verdad.
+   * Spotify, SoundCloud y Deezer usan iframes que los navegadores NO dejan
+   * arrancar sin que el oyente pulse ▶ dentro del propio reproductor.
+   */
+  const [autoOnly, setAutoOnly] = useState(true);
+
+  const embeddable = useMemo(() => tracks.filter((t) => isPlayable(t.platform)), [tracks]);
+  const autoPlayable = useMemo(() => embeddable.filter((t) => t.platform === "youtube"), [embeddable]);
+  const hasAuto = autoPlayable.length > 0;
+  const playable = autoOnly && hasAuto ? autoPlayable : embeddable;
+  const manualCount = embeddable.length - autoPlayable.length;
 
   const [index, setIndex] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -293,14 +303,24 @@ export default function RadioDeck({
                 }`}
               />
               {current && isIframe && started && (
-                <iframe
-                  key={current.id}
-                  title={`${platformLabel(current.platform)} — ${current.title}`}
-                  src={getEmbedUrl(current.platform, current.kind, current.externalId, true) ?? ""}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ border: 0 }}
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                />
+                <div className="absolute inset-0 flex flex-col">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber text-coal shrink-0">
+                    <span className="font-tech text-[10px] tracking-[0.2em] uppercase font-bold">
+                      ▶ Pulsa play dentro del panel de {platformLabel(current.platform)}
+                    </span>
+                    <span className="ml-auto font-tech text-[9px] tracking-wider hidden sm:block">
+                      su reproductor no arranca solo
+                    </span>
+                  </div>
+                  <iframe
+                    key={current.id}
+                    title={`${platformLabel(current.platform)} — ${current.title}`}
+                    src={getEmbedUrl(current.platform, current.kind, current.externalId, true) ?? ""}
+                    className="flex-1 w-full"
+                    style={{ border: 0 }}
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  />
+                </div>
               )}
               {(!started || !current) && (
                 <button
@@ -415,10 +435,41 @@ export default function RadioDeck({
                 </span>
               </div>
               {isIframe && (
-                <p className="font-tech text-[10px] tracking-wider text-bone-dim">
-                  ♪ PISTA {platformLabel(current.platform).toUpperCase()} — el avance a la siguiente emisión es automático;
-                  el control fino vive dentro del reproductor.
+                <p className="font-tech text-[10px] tracking-wider text-amber leading-relaxed">
+                  ⚠ PISTA {platformLabel(current.platform).toUpperCase()} — el audio no arranca solo: pulsa ▶ dentro del
+                  panel de arriba. La barra marca el tiempo en antena, no la reproducción.
                 </p>
+              )}
+              {manualCount > 0 && (
+                <label className="flex items-center gap-2.5 pt-1 cursor-pointer select-none group">
+                  <span
+                    className={`relative w-9 h-5 border transition-colors shrink-0 ${
+                      autoOnly ? "st-border st-bg/20" : "border-inkline bg-coal"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 w-3.5 h-3.5 transition-all ${
+                        autoOnly ? "left-[18px] st-bg" : "left-0.5 bg-bone-dim"
+                      }`}
+                    />
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={autoOnly}
+                    onChange={(e) => {
+                      setAutoOnly(e.target.checked);
+                      setIndex(null);
+                      setStarted(false);
+                      setPlaying(false);
+                      clearIframeTimer();
+                    }}
+                  />
+                  <span className="font-tech text-[10px] tracking-wider text-bone-dim group-hover:text-bone transition-colors">
+                    Emisión sin cortes — solo pistas que suenan solas
+                    <span className="text-bone-dim/60"> ({manualCount} de {embeddable.length} necesitan play manual)</span>
+                  </span>
+                </label>
               )}
             </div>
           </div>
@@ -439,7 +490,8 @@ export default function RadioDeck({
                 const playIdx = playable.indexOf(t);
                 const active = playIdx !== -1 && playIdx === index;
                 if (playIdx === -1) {
-                  // Enlace externo: no reproduce en la radio, abre la plataforma.
+                  // No está en la rotación actual: enlace externo o pista de play manual.
+                  const manual = isPlayable(t.platform);
                   return (
                     <a
                       key={t.id}
@@ -450,8 +502,8 @@ export default function RadioDeck({
                     >
                       <PlatformChip platform={t.platform} />
                       <span className="flex-1 truncate text-sm text-bone/80">{t.title}</span>
-                      <span className="font-tech text-[9px] tracking-[0.2em] uppercase text-bone-dim group-hover:st-text transition-colors shrink-0">
-                        Escuchar en {platformLabel(t.platform)} ↗
+                      <span className={`font-tech text-[9px] tracking-[0.2em] uppercase shrink-0 transition-colors ${manual ? "text-amber" : "text-bone-dim group-hover:st-text"}`}>
+                        {manual ? "▶ play manual" : `Escuchar en ${platformLabel(t.platform)} ↗`}
                       </span>
                     </a>
                   );

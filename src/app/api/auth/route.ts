@@ -7,6 +7,7 @@ import {
   isValidEmail,
   passwordStrength,
   sessionCookie,
+  signToken,
 } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -23,13 +24,23 @@ export async function GET(req: Request) {
     const artist = await db.select({ slug: artists.slug }).from(artists).where(eq(artists.id, user.artistId)).limit(1);
     artistSlug = artist[0]?.slug ?? null;
   }
-  return Response.json({
-    logged: true,
+  // Sesión rodante: cada visita renueva 30 días más, así no te expulsa mientras usas la plataforma.
+  const refreshed = signToken({
+    userId: user.id,
     email: user.email,
-    artistId: user.artistId,
-    artistSlug,
-    role: user.role,
+    artistId: user.artistId ?? undefined,
   });
+
+  return Response.json(
+    {
+      logged: true,
+      email: user.email,
+      artistId: user.artistId,
+      artistSlug,
+      role: user.role,
+    },
+    { headers: { "Set-Cookie": sessionCookie(refreshed) } }
+  );
 }
 
 /** POST = registro con email + contraseña + (opcionalmente) artista recién creado */
@@ -73,8 +84,6 @@ export async function POST(req: Request) {
     { status: 201, headers: { "Set-Cookie": sessionCookie(token) } }
   );
 }
-
-import { signToken } from "@/lib/auth";
 
 function signTokenFromUser(user: { id: number; email: string; artistId: number | null }) {
   return signToken({

@@ -93,7 +93,9 @@ export async function getSchedule(): Promise<RadioSlot[]> {
     })
     .from(tracks)
     .innerJoin(artists, eq(tracks.artistId, artists.id))
-    .where(and(inArray(tracks.platform, [...PLAYABLE_PLATFORMS]), eq(artists.moderationStatus, "active")))
+    // La parrilla global solo usa YouTube: es la única plataforma cuyo reproductor
+    // arranca solo y permite entrar a mitad de canción (emisión real sin cortes).
+    .where(and(eq(tracks.platform, "youtube"), eq(artists.moderationStatus, "active")))
     .orderBy(asc(tracks.artistId), asc(tracks.position), asc(tracks.id));
 
   const slots = interleaveByArtist(
