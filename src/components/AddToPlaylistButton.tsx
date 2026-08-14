@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
-import { fetchJson } from "@/lib/fetchjson";
 
 type Playlist = { id: number; name: string; trackCount?: number };
 
@@ -23,56 +22,50 @@ export default function AddToPlaylistButton({
 
   useEffect(() => {
     if (!open || !session.logged) return;
-    fetchJson<{ playlists: Playlist[] }>("/api/playlists", { cache: "no-store" }).then((res) => {
-      if (res.ok) setPlaylists(res.data?.playlists ?? []);
-      else {
-        setPlaylists([]);
-        setMsg(res.error ?? "");
-      }
-    });
+    fetch("/api/playlists", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setPlaylists(d.playlists ?? []))
+      .catch(() => setPlaylists([]));
   }, [open, session.logged]);
 
   const createAndAdd = async () => {
     setBusy(true);
     setMsg("");
-
-    const created = await fetchJson<{ playlist: Playlist }>("/api/playlists", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Mi playlist" }),
-    });
-
-    if (!created.ok || !created.data?.playlist?.id) {
-      setMsg(created.error ?? "No se pudo crear la playlist.");
+    try {
+      const res = await fetch("/api/playlists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Mi playlist" }),
+      }).catch(() => null);
+      const created = res ? await res.json().catch(() => ({})) : {};
+      if (!created.playlist?.id) throw new Error(created.error ?? "No se pudo crear la playlist.");
+      await addTo(created.playlist.id);
+      setPlaylists((cur) => [...cur, created.playlist]);
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
       setBusy(false);
-      return;
     }
-
-    const nueva = created.data.playlist;
-    setPlaylists((cur) => [...cur, nueva]);
-    setBusy(false);
-    await addTo(nueva.id);
   };
 
   const addTo = async (playlistId: number) => {
     setBusy(true);
     setMsg("");
-
-    const res = await fetchJson<{ already?: boolean }>(`/api/playlists/${playlistId}/tracks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ trackId }),
-    });
-
-    setBusy(false);
-
-    if (!res.ok) {
-      setMsg(res.error ?? "No se pudo añadir.");
-      return;
+    try {
+      const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trackId }),
+      }).catch(() => null);
+      const data = res ? await res.json().catch(() => ({})) : {};
+      if (!res || !res.ok) throw new Error(data.error ?? "No se pudo añadir.");
+      setMsg(data.already ? "Ya estaba en esa playlist" : "Añadida a tu playlist ✔");
+      setTimeout(() => setOpen(false), 900);
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(false);
     }
-
-    setMsg(res.data?.already ? "Ya estaba en esa playlist" : "Añadida a tu playlist ✔");
-    setTimeout(() => setOpen(false), 900);
   };
 
   if (!session.logged) {

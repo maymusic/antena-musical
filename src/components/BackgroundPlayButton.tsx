@@ -12,12 +12,15 @@ export default function BackgroundPlayButton({
   artistSlug,
   accent,
   className = "",
+  startIndex = 0,
 }: {
   tracks: QueueTrack[];
   artistName: string;
   artistSlug: string;
   accent: string;
   className?: string;
+  /** Índice de la canción por la que debe arrancar la emisión. */
+  startIndex?: number;
 }) {
   const { start, stop, isActive, activeSlug, playing } = useGlobalPlayer();
   const mine = isActive && activeSlug === artistSlug;
@@ -26,7 +29,7 @@ export default function BackgroundPlayButton({
 
   return (
     <button
-      onClick={() => (mine ? stop() : start({ tracks, artistName, artistSlug, accent }))}
+      onClick={() => (mine ? stop() : start({ tracks, artistName, artistSlug, accent, startIndex }))}
       style={{ ["--st" as string]: accent } as React.CSSProperties}
       className={
         className ||

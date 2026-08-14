@@ -3,8 +3,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/components/SessionProvider";
-import { fetchJson } from "@/lib/fetchjson";
 import { useGlobalPlayer, type QueueTrack } from "@/components/GlobalPlayer";
+import WinampPlayer, { type WinampTrack } from "@/components/WinampPlayer";
 import { IconAntenna, IconPlay, IconTrash, PlatformChip } from "@/components/icons";
 
 type Playlist = {
@@ -40,22 +40,26 @@ export default function PlaylistsClient() {
 
   const loadPlaylists = async () => {
     setLoading(true);
-    const res = await fetchJson<{ playlists: Playlist[] }>("/api/playlists", { cache: "no-store" });
-    if (res.ok) setPlaylists(res.data?.playlists ?? []);
-    else {
+    try {
+      const res = await fetch("/api/playlists", { cache: "no-store" });
+      const data = res.ok ? await res.json() : { playlists: [] };
+      setPlaylists(data.playlists ?? []);
+    } catch {
       setPlaylists([]);
-      setMsg(res.error ?? "");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const loadDetail = async (p: Playlist) => {
     setActive(p);
-    const res = await fetchJson<{ items: Item[] }>(`/api/playlists/${p.id}`, { cache: "no-store" });
-    if (res.ok) setItems(res.data?.items ?? []);
-    else {
+    setItems([]);
+    try {
+      const res = await fetch(`/api/playlists/${p.id}`, { cache: "no-store" });
+      const data = res.ok ? await res.json() : { items: [] };
+      setItems(data.items ?? []);
+    } catch {
       setItems([]);
-      setMsg(res.error ?? "");
     }
   };
 
@@ -67,12 +71,13 @@ export default function PlaylistsClient() {
   const create = async (e: FormEvent) => {
     e.preventDefault();
     setMsg("");
-    const res = await fetchJson("/api/playlists", {
+    const res = await fetch("/api/playlists", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
     });
-    if (!res.ok) return setMsg(res.error ?? "No se pudo crear.");
+    const data = await res.json();
+    if (!res.ok) return setMsg(data.error ?? "No se pudo crear.");
     setName("");
     await loadPlaylists();
     setMsg("Playlist creada ✔");
@@ -80,19 +85,44 @@ export default function PlaylistsClient() {
 
   const removeItem = async (item: Item) => {
     if (!active) return;
-    const res = await fetchJson(`/api/playlists/${active.id}/tracks?itemId=${item.itemId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) {
-      setMsg(res.error ?? "No se pudo quitar la canción.");
-      return;
-    }
+    await fetch(`/api/playlists/${active.id}/tracks?itemId=${item.itemId}`, { method: "DELETE" });
     await loadDetail(active);
     await loadPlaylists();
   };
 
+  const removePlaylist = async (p: Playlist) => {
+    if (!confirm(`¿Borrar la playlist «${p.name}»? Esta acción no se puede deshacer.`)) return;
+    try {
+      await fetch(`/api/playlists/${p.id}`, { method: "DELETE" });
+    } catch {
+      /* seguimos: refrescamos igual */
+    }
+    if (active?.id === p.id) {
+      setActive(null);
+      setItems([]);
+    }
+    await loadPlaylists();
+    setMsg("Playlist borrada");
+  };
+
   const youtubeQueue = useMemo<QueueTrack[]>(
     () => items.filter((i) => i.platform === "youtube" && i.externalId).map((i) => ({ id: i.trackId, title: i.title, externalId: i.externalId })),
+    [items]
+  );
+
+  /** Pistas para el mezclador retro (solo YouTube: son las que suenan solas). */
+  const winampTracks = useMemo<WinampTrack[]>(
+    () =>
+      items
+        .filter((i) => i.platform === "youtube" && i.externalId)
+        .map((i) => ({
+          trackId: i.trackId,
+          title: i.title,
+          artistName: i.artistName,
+          externalId: i.externalId,
+          durationSec: i.durationSec,
+          accent: i.accent || "#43e56c",
+        })),
     [items]
   );
 
@@ -131,14 +161,25 @@ export default function PlaylistsClient() {
           {loading ? <p className="text-sm text-bone-dim">Cargando…</p> : null}
           {playlists.length === 0 && !loading ? <p className="text-sm text-bone-dim">Aún no tienes playlists.</p> : null}
           {playlists.map((p) => (
-            <button
+            <div
               key={p.id}
-              onClick={() => loadDetail(p)}
-              className={`block w-full text-left px-3 py-3 transition neon-panel ${active?.id === p.id ? "neon-title" : "text-bone hover:brightness-110"}`}
+              className={`neon-panel flex items-center gap-2 px-3 py-3 transition ${active?.id === p.id ? "neon-title" : "text-bone hover:brightness-110"}`}
             >
-              <span className="block font-display font-bold">{p.name}</span>
-              <span className="font-tech text-[9px] tracking-widest uppercase text-bone-dim">{p.trackCount} canciones</span>
-            </button>
+              <button onClick={() => loadDetail(p)} className="flex-1 min-w-0 text-left">
+                <span className="block font-display font-bold truncate">{p.name}</span>
+                <span className="font-tech text-[9px] tracking-widest uppercase text-bone-dim">
+                  {p.trackCount} canciones
+                </span>
+              </button>
+              <button
+                onClick={() => removePlaylist(p)}
+                className="shrink-0 p-2 text-bone-dim hover:text-signal transition-colors"
+                title={`Borrar «${p.name}»`}
+                aria-label={`Borrar playlist ${p.name}`}
+              >
+                <IconTrash className="w-4 h-4" />
+              </button>
+            </div>
           ))}
         </div>
       </aside>
@@ -155,14 +196,31 @@ export default function PlaylistsClient() {
                 <p className="font-tech text-[10px] tracking-[0.3em] uppercase neon-title mb-1">Playlist personal</p>
                 <h2 className="font-display text-2xl font-extrabold">{active.name}</h2>
               </div>
-              <button
-                disabled={youtubeQueue.length === 0}
-                onClick={() => player.start({ tracks: youtubeQueue, artistName: active.name, artistSlug: "playlists", accent: "#FF4D00" })}
-                className="neon-btn inline-flex items-center justify-center gap-2 px-5 py-3 font-display font-bold disabled:opacity-40"
-              >
-                <IconPlay className="w-4 h-4" /> Escuchar YouTube en segundo plano
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  disabled={youtubeQueue.length === 0}
+                  onClick={() => player.start({ tracks: youtubeQueue, artistName: active.name, artistSlug: "playlists", accent: "#FF4D00" })}
+                  className="neon-btn inline-flex items-center justify-center gap-2 px-5 py-3 font-display font-bold disabled:opacity-40"
+                >
+                  <IconPlay className="w-4 h-4" /> Segundo plano
+                </button>
+                <button
+                  onClick={() => removePlaylist(active)}
+                  className="inline-flex items-center gap-2 px-4 py-3 border border-inkline font-tech text-[10px] tracking-[0.2em] uppercase text-bone-dim hover:text-signal hover:border-signal transition-colors"
+                  title="Borrar esta playlist"
+                >
+                  <IconTrash className="w-4 h-4" /> Borrar
+                </button>
+              </div>
             </div>
+
+            {/* Mezclador retro: automezcla + modo TV a pantalla completa */}
+            {winampTracks.length > 0 && (
+              <div className="p-5 border-b border-inkline">
+                <WinampPlayer tracks={winampTracks} playlistName={active.name} />
+              </div>
+            )}
+
             {items.length === 0 ? (
               <div className="p-10 text-center text-bone-dim">
                 Esta playlist está vacía. Entra a un perfil de artista y pulsa “+ playlist” en una canción.
@@ -174,7 +232,13 @@ export default function PlaylistsClient() {
                     <span className="font-tech text-[10px] neon-muted w-6">{String(idx + 1).padStart(2, "0")}</span>
                     <PlatformChip platform={item.platform} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold text-bone">{item.title}</span>
+                      <Link
+                        href={`/${item.artistSlug}/cancion/${item.trackId}`}
+                        className="block truncate font-semibold text-bone hover:neon-title transition-colors"
+                        title="Abrir la página de la canción (para compartirla)"
+                      >
+                        {item.title}
+                      </Link>
                       <Link href={`/${item.artistSlug}`} className="font-tech text-[9px] uppercase tracking-widest text-bone-dim hover:neon-title">
                         {item.artistName}
                       </Link>

@@ -134,10 +134,11 @@ export default function PhotoReel({
                 />
                 {/* foto completa, sin recortes */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* llena la pantalla manteniendo proporción, también si la foto es pequeña */}
                 <img
                   src={img.url}
                   alt={img.caption || `Foto ${i + 1}`}
-                  className="relative max-h-[82vh] max-w-[94vw] w-auto h-auto object-contain shadow-2xl"
+                  className="relative h-[86vh] w-[94vw] object-contain drop-shadow-2xl"
                   draggable={false}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />

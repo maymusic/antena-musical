@@ -4,6 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { IconClose, IconArrowRight } from "./icons";
 import type { ImageRow } from "@/db/schema";
 
+/** Pide a Google Drive la versión grande de la foto al verla a pantalla completa. */
+function hiRes(url: string): string {
+  if (!url.includes("drive.google.com")) return url;
+  return url.includes("sz=") ? url.replace(/sz=w\d+/, "sz=w2048") : `${url}&sz=w2048`;
+}
+
 export default function Gallery({ images, accent }: { images: ImageRow[]; accent: string }) {
   const [open, setOpen] = useState<number | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -114,17 +120,19 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
             {/* fondo difuminado con la misma foto */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={current.url}
+              src={hiRes(current.url)}
               alt=""
               aria-hidden
               className="absolute inset-0 w-full h-full object-cover opacity-20 blur-2xl scale-110"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* h-full + object-contain: la foto SE AGRANDA hasta llenar la pantalla
+                manteniendo su proporción (con max-w/h nunca crecía si era pequeña) */}
             <img
               key={current.id}
-              src={current.url}
+              src={hiRes(current.url)}
               alt={current.caption || "Foto ampliada"}
-              className="relative max-h-full max-w-full w-auto h-auto object-contain border border-inkline shadow-2xl select-none rounded-sm"
+              className="relative h-full w-full object-contain select-none drop-shadow-2xl"
               draggable={false}
             />
 
@@ -150,21 +158,25 @@ export default function Gallery({ images, accent }: { images: ImageRow[]; accent
             <p className="font-tech text-xs tracking-wider text-bone-dim max-w-lg text-center truncate w-full">
               {current.caption || "SIN TÍTULO"}
             </p>
-            <div className="flex items-center gap-1.5 max-w-full overflow-x-auto pb-1">
-              {images.map((img, j) => (
-                <button
-                  key={img.id}
-                  onClick={() => setOpen(j)}
-                  className={`shrink-0 w-12 h-9 border overflow-hidden transition-all ${
-                    j === open ? "border-[var(--st)] opacity-100 scale-105" : "border-inkline opacity-50 hover:opacity-90"
-                  }`}
-                  aria-label={`Foto ${j + 1}`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {images.length > 1 && (
+              <div className="flex items-center gap-2 max-w-full overflow-x-auto pb-1">
+                {images.map((img, j) => (
+                  <button
+                    key={img.id}
+                    onClick={() => setOpen(j)}
+                    className={`shrink-0 w-16 h-12 sm:w-20 sm:h-14 border-2 overflow-hidden transition-all ${
+                      j === open
+                        ? "border-[var(--st)] opacity-100 scale-105 shadow-[0_0_14px_var(--st)]"
+                        : "border-inkline opacity-50 hover:opacity-90"
+                    }`}
+                    aria-label={`Foto ${j + 1}`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
