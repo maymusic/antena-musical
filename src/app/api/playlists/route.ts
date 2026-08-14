@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       id: playlists.id,
       name: playlists.name,
       description: playlists.description,
+      isPublic: playlists.isPublic,
       createdAt: playlists.createdAt,
       trackCount: sql<number>`count(${playlistTracks.id})`.as("trackCount"),
     })
@@ -34,11 +35,12 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const name = String(body.name ?? "").trim().slice(0, 80);
   const description = String(body.description ?? "").trim().slice(0, 240);
+  const isPublic = body.isPublic ? 1 : 0;
   if (name.length < 2) return json({ error: "Ponle un nombre a tu playlist." }, 400);
 
   const [playlist] = await db
     .insert(playlists)
-    .values({ userId: payload.userId, name, description })
+    .values({ userId: payload.userId, name, description, isPublic })
     .returning();
 
   return json({ playlist }, 201);
