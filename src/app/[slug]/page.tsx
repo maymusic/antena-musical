@@ -343,15 +343,18 @@ export default async function StationPage({ params }: Ctx) {
                 <li key={t.id} className="sm:odd:border-r border-b border-inkline sm:[&:nth-last-child(-n+2)]:border-b-0">
                   <div className="flex items-center gap-3 px-4 py-3 bg-panel hover:bg-coal-2 transition-colors group h-full">
                     <PlatformChip platform={t.platform} />
-                    <a href={t.url} target="_blank" rel="noreferrer" className="flex-1 min-w-0">
-                      <span className="block text-sm font-semibold truncate group-hover:st-text transition-colors">
-                        {t.title}
+                    <Link href={`/${artist.slug}/cancion/${t.id}`} className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className="block text-sm font-semibold truncate group-hover:st-text transition-colors">
+                          {t.title}
+                        </span>
+                        {t.featured ? <span className="featured-chip shrink-0">Destacada</span> : null}
                       </span>
                       <span className="block font-tech text-[9px] tracking-widest uppercase text-bone-dim">
                         {platformLabel(t.platform)}
                         {isPlayable(t.platform) && <span className="text-onair"> · en rotación</span>}
                       </span>
-                    </a>
+                    </Link>
                     <AddToPlaylistButton trackId={t.id} trackTitle={t.title} accent={artist.accent} />
                     <a href={t.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${t.title}`}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-bone-dim group-hover:st-text transition-colors shrink-0">

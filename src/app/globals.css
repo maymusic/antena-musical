@@ -259,6 +259,145 @@ input[type="range"].fader::-moz-range-thumb {
   color: color-mix(in srgb, var(--st) 70%, var(--color-bone-dim));
 }
 
+/* ============================================================
+   REPRODUCTOR RETRO ESTILO WINAMP (playlists / modo TV)
+   ============================================================ */
+.winamp {
+  position: relative;
+  border: 2px solid #4a3f31;
+  background: linear-gradient(180deg, #2b2419 0%, #1a1510 100%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.6),
+    6px 6px 0 rgba(0, 0, 0, 0.55);
+}
+
+.winamp-tv {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  border: 0;
+  box-shadow: none;
+  background: radial-gradient(1200px 700px at 50% 30%, #241d14 0%, #0d0a07 70%);
+}
+
+.winamp-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  color: #d8cbb4;
+  background: linear-gradient(180deg, #574835 0%, #33291d 100%);
+  border-bottom: 1px solid #100c08;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.winamp-tbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  color: #e6dbc6;
+  background: linear-gradient(180deg, #6b5942 0%, #3b3023 100%);
+  border: 1px solid #191309;
+}
+.winamp-tbtn:hover {
+  filter: brightness(1.2);
+}
+
+.winamp-lcd {
+  padding: 10px 12px;
+  background: #0b0f0a;
+  border: 1px solid #000;
+  box-shadow: inset 0 0 22px rgba(67, 229, 108, 0.09);
+}
+
+.winamp-num {
+  font-family: var(--font-tech);
+  font-size: 20px;
+  color: var(--st);
+  text-shadow: 0 0 8px var(--st);
+}
+
+.winamp-track {
+  font-family: var(--font-tech);
+  font-weight: 700;
+  color: var(--st);
+  text-shadow: 0 0 7px color-mix(in srgb, var(--st) 70%, transparent);
+}
+
+.winamp-kbps {
+  color: #7d8f76;
+  white-space: nowrap;
+}
+
+@keyframes winamp-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-42%); }
+}
+.winamp-marquee {
+  animation: winamp-marquee 14s linear infinite alternate;
+}
+
+/* visualizador de barras */
+.winamp-viz {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  width: 100%;
+}
+.winamp-bar {
+  flex: 1;
+  min-width: 3px;
+  background: linear-gradient(180deg, var(--st) 0%, color-mix(in srgb, var(--st) 45%, #000) 100%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--st) 55%, transparent);
+  transition: height 0.12s linear;
+}
+
+.winamp-seek {
+  position: relative;
+  height: 10px;
+  margin-top: 10px;
+  cursor: pointer;
+  background: #100c08;
+  border: 1px solid #000;
+  box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.7);
+}
+.winamp-seek-fill {
+  height: 100%;
+  background: linear-gradient(180deg, var(--st), color-mix(in srgb, var(--st) 50%, #000));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--st) 60%, transparent);
+  transition: width 0.2s linear;
+}
+
+.winamp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 10px;
+  color: #d8cbb4;
+  background: linear-gradient(180deg, #574835 0%, #322819 100%);
+  border: 1px solid #171008;
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.09);
+}
+.winamp-btn:hover { filter: brightness(1.15); }
+.winamp-btn:active { transform: translateY(1px); }
+.winamp-btn-main {
+  color: #0d0a07;
+  background: linear-gradient(180deg, var(--st), color-mix(in srgb, var(--st) 55%, #000));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--st) 45%, transparent);
+}
+.winamp-on {
+  color: var(--st);
+  border-color: var(--st);
+  text-shadow: 0 0 8px var(--st);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--st) 18%, transparent);
+}
+
 /*
   Pantalla de video.
   La IFrame API de YouTube SUSTITUYE el div objetivo por su propio <iframe>,
