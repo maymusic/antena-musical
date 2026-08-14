@@ -5,12 +5,14 @@ import Link from "next/link";
 import { useSession } from "@/components/SessionProvider";
 import { useGlobalPlayer, type QueueTrack } from "@/components/GlobalPlayer";
 import WinampPlayer, { type WinampTrack } from "@/components/WinampPlayer";
+import ShareButtons from "@/components/ShareButtons";
 import { IconAntenna, IconPlay, IconTrash, PlatformChip } from "@/components/icons";
 
 type Playlist = {
   id: number;
   name: string;
   description: string;
+  isPublic: number;
   trackCount: number;
 };
 
@@ -58,6 +60,11 @@ export default function PlaylistsClient() {
       const res = await fetch(`/api/playlists/${p.id}`, { cache: "no-store" });
       const data = res.ok ? await res.json() : { items: [] };
       setItems(data.items ?? []);
+      if (data.playlist) {
+        const refreshed = { ...p, ...data.playlist, trackCount: data.items?.length ?? p.trackCount } as Playlist;
+        setActive(refreshed);
+        setPlaylists((current) => current.map((x) => (x.id === p.id ? refreshed : x)));
+      }
     } catch {
       setItems([]);
     }
@@ -104,6 +111,33 @@ export default function PlaylistsClient() {
     await loadPlaylists();
     setMsg("Playlist borrada");
   };
+
+  const togglePublic = async () => {
+    if (!active) return;
+    const next = active.isPublic ? 0 : 1;
+    setMsg("");
+    try {
+      const res = await fetch(`/api/playlists/${active.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: next }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.playlist) {
+        setMsg(data.error ?? "No se pudo actualizar la visibilidad.");
+        return;
+      }
+      const updated = { ...active, ...data.playlist } as Playlist;
+      setActive(updated);
+      setPlaylists((current) => current.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)));
+      setMsg(next ? "Playlist publicada: ya puedes compartirla ✔" : "Playlist puesta en privado");
+    } catch {
+      setMsg("No se pudo actualizar la visibilidad.");
+    }
+  };
+
+  const publicUrl = (id: number) =>
+    typeof window !== "undefined" ? `${window.location.origin}/playlists/${id}` : `/playlists/${id}`;
 
   const youtubeQueue = useMemo<QueueTrack[]>(
     () => items.filter((i) => i.platform === "youtube" && i.externalId).map((i) => ({ id: i.trackId, title: i.title, externalId: i.externalId })),
@@ -168,7 +202,7 @@ export default function PlaylistsClient() {
               <button onClick={() => loadDetail(p)} className="flex-1 min-w-0 text-left">
                 <span className="block font-display font-bold truncate">{p.name}</span>
                 <span className="font-tech text-[9px] tracking-widest uppercase text-bone-dim">
-                  {p.trackCount} canciones
+                  {p.trackCount} canciones · {p.isPublic ? "● pública" : "○ privada"}
                 </span>
               </button>
               <button
@@ -194,7 +228,20 @@ export default function PlaylistsClient() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-inkline p-5 bg-coal-2">
               <div>
                 <p className="font-tech text-[10px] tracking-[0.3em] uppercase neon-title mb-1">Playlist personal</p>
-                <h2 className="font-display text-2xl font-extrabold">{active.name}</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="font-display text-2xl font-extrabold">{active.name}</h2>
+                  <span className="featured-chip">{active.isPublic ? "● Pública" : "○ Privada"}</span>
+                </div>
+                {active.isPublic && (
+                  <a
+                    href={publicUrl(active.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 block max-w-md truncate font-tech text-[9px] tracking-widest neon-muted hover:neon-title"
+                  >
+                    {publicUrl(active.id)} ↗
+                  </a>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -205,6 +252,17 @@ export default function PlaylistsClient() {
                   <IconPlay className="w-4 h-4" /> Segundo plano
                 </button>
                 <button
+                  onClick={togglePublic}
+                  className={`inline-flex items-center gap-2 px-4 py-3 border font-tech text-[10px] tracking-[0.16em] uppercase transition-colors ${
+                    active.isPublic
+                      ? "border-onair text-onair bg-onair/10"
+                      : "border-inkline text-bone-dim hover:text-onair hover:border-onair"
+                  }`}
+                  title={active.isPublic ? "Ocultar esta playlist al público" : "Publicar y obtener enlace para compartir"}
+                >
+                  {active.isPublic ? "● Pública" : "Publicar"}
+                </button>
+                <button
                   onClick={() => removePlaylist(active)}
                   className="inline-flex items-center gap-2 px-4 py-3 border border-inkline font-tech text-[10px] tracking-[0.2em] uppercase text-bone-dim hover:text-signal hover:border-signal transition-colors"
                   title="Borrar esta playlist"
@@ -213,6 +271,13 @@ export default function PlaylistsClient() {
                 </button>
               </div>
             </div>
+
+            {active.isPublic && (
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-inkline bg-onair/5">
+                <span className="font-tech text-[9px] tracking-[0.24em] uppercase text-onair">Compartir playlist pública</span>
+                <ShareButtons title={`${active.name} — Playlist pública en ANTENA MUSICAL`} accent="#43e56c" shareUrl={publicUrl(active.id)} />
+              </div>
+            )}
 
             {/* Mezclador retro: automezcla + modo TV a pantalla completa */}
             {winampTracks.length > 0 && (

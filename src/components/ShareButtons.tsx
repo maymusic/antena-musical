@@ -6,15 +6,18 @@ import { useState } from "react";
 export default function ShareButtons({
   title,
   accent,
+  shareUrl,
 }: {
   title: string;
   accent: string;
+  /** URL explícita para compartir (p. ej. una playlist pública). */
+  shareUrl?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
   const url = () =>
-    typeof window !== "undefined" ? window.location.href : "";
+    shareUrl || (typeof window !== "undefined" ? window.location.href : "");
   const text = () => `📻 ${title} tiene su propia radio online — escúchala en ANTENA MUSICAL`;
 
   const copy = async () => {
