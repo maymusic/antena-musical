@@ -75,7 +75,7 @@ export default async function PublicPlaylistPage({ params }: Ctx) {
             href="/playlists"
             className="inline-flex items-center gap-2 font-tech text-[10px] tracking-[0.25em] uppercase text-bone-dim hover:st-text transition-colors mb-7"
           >
-            ← Mis playlists
+            ← Playlists públicas
           </Link>
           <p className="font-tech text-[11px] tracking-[0.32em] uppercase neon-title mb-3">Playlist pública · Antena Musical</p>
           <h1 className="font-display font-extrabold text-4xl md:text-6xl tracking-tight leading-[0.95]">
