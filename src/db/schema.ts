@@ -47,6 +47,8 @@ export const playlists = pgTable("playlists", {
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
+  /** 0 = privada (solo el dueño), 1 = compartible y visible para cualquiera. */
+  isPublic: integer("is_public").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
