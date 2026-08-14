@@ -266,8 +266,8 @@ export default async function Home() {
                 city: s.city,
                 coverUrl: s.coverUrl,
                 accent: s.accent,
-                trackCount: s.trackCount,
-                plays: s.plays,
+                trackCount: Number(s.trackCount ?? 0),
+                plays: Number(s.plays ?? 0),
                 verified: s.verificationStatus === "approved",
               }))}
             />

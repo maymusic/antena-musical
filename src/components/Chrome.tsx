@@ -63,6 +63,7 @@ export function TopBar({ solid = false }: { solid?: boolean }) {
           <a href="/#estaciones" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Estaciones</a>
           <Link href="/buscar" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Buscar</Link>
           <Link href="/mi-dial" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Mi dial</Link>
+          <Link href="/playlists" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Playlists</Link>
           <a href="/#como-funciona" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors">Cómo funciona</a>
         </nav>
 
@@ -128,6 +129,7 @@ export function Footer() {
           <ul className="space-y-2.5 text-sm">
             <li><Link href="/radio" className="text-bone hover:text-signal transition-colors">Antena Musical Central (en vivo)</Link></li>
             <li><a href="/#estaciones" className="text-bone hover:text-signal transition-colors">Estaciones en línea</a></li>
+            <li><Link href="/playlists" className="text-bone hover:text-signal transition-colors">Mis playlists</Link></li>
             <li><a href="/#como-funciona" className="text-bone hover:text-signal transition-colors">Cómo funciona</a></li>
             <li><a href="/#ideas" className="text-bone hover:text-signal transition-colors">Qué puedes subir</a></li>
           </ul>

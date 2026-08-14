@@ -40,6 +40,31 @@ export const favorites = pgTable("favorites", {
 
 export type Favorite = typeof favorites.$inferSelect;
 
+export const playlists = pgTable("playlists", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const playlistTracks = pgTable("playlist_tracks", {
+  id: serial("id").primaryKey(),
+  playlistId: integer("playlist_id")
+    .notNull()
+    .references(() => playlists.id, { onDelete: "cascade" }),
+  trackId: integer("track_id")
+    .notNull()
+    .references(() => tracks.id, { onDelete: "cascade" }),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Playlist = typeof playlists.$inferSelect;
+export type PlaylistTrack = typeof playlistTracks.$inferSelect;
+
 export const artists = pgTable("artists", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),

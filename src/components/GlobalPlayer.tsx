@@ -50,8 +50,11 @@ export function GlobalPlayerProvider({ children }: { children: React.ReactNode }
   const [volume, setVolume] = useState(80);
   const [progress, setProgress] = useState({ cur: 0, dur: 0 });
   const [expanded, setExpanded] = useState(false);
+  const [keepAwake, setKeepAwake] = useState(false);
+  const [wakeSupported, setWakeSupported] = useState(false);
 
   const playerRef = useRef<any>(null);
+  const wakeLockRef = useRef<any>(null);
   const queueRef = useRef<QueueTrack[]>([]);
   const indexRef = useRef(0);
   const mutedRef = useRef(false);
@@ -134,6 +137,41 @@ export function GlobalPlayerProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     applyVolume();
   }, [muted, volume, applyVolume]);
+
+  /* ---- modo pantalla despierta: evita que el navegador suspenda YouTube al bloquearse ---- */
+  useEffect(() => {
+    setWakeSupported(typeof navigator !== "undefined" && "wakeLock" in navigator);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function applyWakeLock() {
+      try {
+        if (!keepAwake || !isActive || typeof navigator === "undefined" || !("wakeLock" in navigator)) {
+          await wakeLockRef.current?.release?.();
+          wakeLockRef.current = null;
+          return;
+        }
+        wakeLockRef.current = await (navigator as any).wakeLock.request("screen");
+        wakeLockRef.current?.addEventListener?.("release", () => {
+          if (!cancelled) wakeLockRef.current = null;
+        });
+      } catch {
+        wakeLockRef.current = null;
+      }
+    }
+    applyWakeLock();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") applyWakeLock();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibility);
+      wakeLockRef.current?.release?.().catch?.(() => {});
+      wakeLockRef.current = null;
+    };
+  }, [keepAwake, isActive]);
 
   /* ---- progreso ---- */
   useEffect(() => {
@@ -329,6 +367,19 @@ export function GlobalPlayerProvider({ children }: { children: React.ReactNode }
               style={{ ["--fill" as string]: `${muted ? 0 : volume}%` } as React.CSSProperties}
               aria-label="Volumen"
             />
+
+            {wakeSupported && (
+              <button
+                onClick={() => setKeepAwake((v) => !v)}
+                className={`inline-flex p-2 border transition-colors shrink-0 ${
+                  keepAwake ? "border-onair text-onair bg-onair/10" : "border-inkline text-bone-dim hover:text-bone"
+                }`}
+                title={keepAwake ? "Pantalla despierta activada" : "Mantener pantalla despierta para que YouTube no se corte"}
+                aria-label="Mantener pantalla despierta"
+              >
+                ☀
+              </button>
+            )}
 
             <button
               onClick={() => setExpanded((v) => !v)}

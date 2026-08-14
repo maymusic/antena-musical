@@ -16,6 +16,7 @@ import NotifyBell from "@/components/NotifyBell";
 import BackgroundPlayButton from "@/components/BackgroundPlayButton";
 import ShareButtons from "@/components/ShareButtons";
 import FavButton from "@/components/FavButton";
+import AddToPlaylistButton from "@/components/AddToPlaylistButton";
 import ChatPanel from "@/components/ChatPanel";
 import Reveal from "@/components/Reveal";
 import {
@@ -340,14 +341,9 @@ export default async function StationPage({ params }: Ctx) {
             <ul className="border border-inkline divide-y divide-inkline grid sm:grid-cols-2 gap-0">
               {stationTracks.map((t) => (
                 <li key={t.id} className="sm:odd:border-r border-b border-inkline sm:[&:nth-last-child(-n+2)]:border-b-0">
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 px-4 py-3 bg-panel hover:bg-coal-2 transition-colors group h-full"
-                  >
+                  <div className="flex items-center gap-3 px-4 py-3 bg-panel hover:bg-coal-2 transition-colors group h-full">
                     <PlatformChip platform={t.platform} />
-                    <span className="flex-1 min-w-0">
+                    <a href={t.url} target="_blank" rel="noreferrer" className="flex-1 min-w-0">
                       <span className="block text-sm font-semibold truncate group-hover:st-text transition-colors">
                         {t.title}
                       </span>
@@ -355,11 +351,14 @@ export default async function StationPage({ params }: Ctx) {
                         {platformLabel(t.platform)}
                         {isPlayable(t.platform) && <span className="text-onair"> · en rotación</span>}
                       </span>
-                    </span>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-bone-dim group-hover:st-text transition-colors shrink-0">
-                      <path d="M7 17L17 7M9 7h8v8" />
-                    </svg>
-                  </a>
+                    </a>
+                    <AddToPlaylistButton trackId={t.id} trackTitle={t.title} accent={artist.accent} />
+                    <a href={t.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${t.title}`}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-bone-dim group-hover:st-text transition-colors shrink-0">
+                        <path d="M7 17L17 7M9 7h8v8" />
+                      </svg>
+                    </a>
+                  </div>
                 </li>
               ))}
             </ul>
