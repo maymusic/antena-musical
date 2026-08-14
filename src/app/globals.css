@@ -173,7 +173,7 @@ input[type="range"].fader::-moz-range-thumb {
 .st-border { border-color: var(--st); }
 .st-shadow { box-shadow: 6px 6px 0 0 var(--st); }
 
-/* ===== etiqueta «DESTACADA» en neón ===== */
+/* ===== utilidades neón ===== */
 @keyframes neon-glow {
   0%, 100% {
     text-shadow:
@@ -190,10 +190,12 @@ input[type="range"].fader::-moz-range-thumb {
     opacity: 0.85;
   }
 }
+
 .featured-neon {
   animation: neon-glow 2s ease-in-out infinite;
   color: var(--st);
 }
+
 .featured-chip {
   display: inline-flex;
   align-items: center;
@@ -214,6 +216,47 @@ input[type="range"].fader::-moz-range-thumb {
     0 0 10px color-mix(in srgb, var(--st) 45%, transparent),
     inset 0 0 8px color-mix(in srgb, var(--st) 18%, transparent);
   white-space: nowrap;
+}
+
+.neon-panel {
+  border: 1px solid color-mix(in srgb, var(--st) 50%, #3a2f24);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08)),
+    rgba(20, 16, 12, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 0 18px color-mix(in srgb, var(--st) 18%, transparent),
+    0 0 36px color-mix(in srgb, var(--st) 8%, transparent);
+}
+
+.neon-btn {
+  border: 1px solid var(--st);
+  background: color-mix(in srgb, var(--st) 16%, #120e0a);
+  color: var(--st);
+  text-shadow:
+    0 0 4px color-mix(in srgb, var(--st) 80%, white 20%),
+    0 0 10px color-mix(in srgb, var(--st) 50%, transparent);
+  box-shadow:
+    inset 0 0 10px color-mix(in srgb, var(--st) 10%, transparent),
+    0 0 12px color-mix(in srgb, var(--st) 22%, transparent);
+}
+.neon-btn:hover {
+  filter: brightness(1.08);
+  box-shadow:
+    inset 0 0 12px color-mix(in srgb, var(--st) 16%, transparent),
+    0 0 18px color-mix(in srgb, var(--st) 35%, transparent);
+}
+
+.neon-title {
+  color: var(--st);
+  text-shadow:
+    0 0 5px color-mix(in srgb, var(--st) 100%, white 12%),
+    0 0 14px color-mix(in srgb, var(--st) 42%, transparent),
+    0 0 28px color-mix(in srgb, var(--st) 25%, transparent);
+}
+
+.neon-muted {
+  color: color-mix(in srgb, var(--st) 70%, var(--color-bone-dim));
 }
 
 /*

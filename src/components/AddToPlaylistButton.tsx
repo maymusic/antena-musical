@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "@/components/SessionProvider";
+import { fetchJson } from "@/lib/fetchjson";
 
 type Playlist = { id: number; name: string; trackCount?: number };
 
@@ -22,56 +23,63 @@ export default function AddToPlaylistButton({
 
   useEffect(() => {
     if (!open || !session.logged) return;
-    fetch("/api/playlists", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d) => setPlaylists(d.playlists ?? []))
-      .catch(() => setPlaylists([]));
+    fetchJson<{ playlists: Playlist[] }>("/api/playlists", { cache: "no-store" }).then((res) => {
+      if (res.ok) setPlaylists(res.data?.playlists ?? []);
+      else {
+        setPlaylists([]);
+        setMsg(res.error ?? "");
+      }
+    });
   }, [open, session.logged]);
 
   const createAndAdd = async () => {
     setBusy(true);
     setMsg("");
-    try {
-      const created = await fetch("/api/playlists", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Mi playlist" }),
-      }).then((r) => r.json());
-      if (!created.playlist?.id) throw new Error(created.error ?? "No se pudo crear la playlist.");
-      await addTo(created.playlist.id);
-      setPlaylists((cur) => [...cur, created.playlist]);
-    } catch (e) {
-      setMsg((e as Error).message);
-    } finally {
+
+    const created = await fetchJson<{ playlist: Playlist }>("/api/playlists", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Mi playlist" }),
+    });
+
+    if (!created.ok || !created.data?.playlist?.id) {
+      setMsg(created.error ?? "No se pudo crear la playlist.");
       setBusy(false);
+      return;
     }
+
+    const nueva = created.data.playlist;
+    setPlaylists((cur) => [...cur, nueva]);
+    setBusy(false);
+    await addTo(nueva.id);
   };
 
   const addTo = async (playlistId: number) => {
     setBusy(true);
     setMsg("");
-    try {
-      const res = await fetch(`/api/playlists/${playlistId}/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackId }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "No se pudo añadir.");
-      setMsg(data.already ? "Ya estaba en esa playlist" : "Añadida a tu playlist ✔");
-      setTimeout(() => setOpen(false), 900);
-    } catch (e) {
-      setMsg((e as Error).message);
-    } finally {
-      setBusy(false);
+
+    const res = await fetchJson<{ already?: boolean }>(`/api/playlists/${playlistId}/tracks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trackId }),
+    });
+
+    setBusy(false);
+
+    if (!res.ok) {
+      setMsg(res.error ?? "No se pudo añadir.");
+      return;
     }
+
+    setMsg(res.data?.already ? "Ya estaba en esa playlist" : "Añadida a tu playlist ✔");
+    setTimeout(() => setOpen(false), 900);
   };
 
   if (!session.logged) {
     return (
       <a
         href="/login"
-        className="font-tech text-[9px] tracking-[0.2em] uppercase text-bone-dim hover:text-signal"
+        className="font-tech text-[9px] tracking-[0.24em] uppercase neon-muted hover:neon-title"
         title="Inicia sesión para crear playlists"
       >
         + playlist
@@ -88,49 +96,55 @@ export default function AddToPlaylistButton({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="font-tech text-[9px] tracking-[0.2em] uppercase text-bone-dim hover:st-text"
+        className="featured-chip hover:brightness-110"
         title={`Añadir «${trackTitle}» a una playlist`}
       >
         + playlist
       </button>
       {open && (
-        <span className="absolute right-0 top-full z-[90] mt-2 w-64 border border-inkline bg-coal p-3 shadow-2xl">
-          <span className="block font-tech text-[9px] tracking-[0.25em] uppercase text-bone-dim mb-2">
+        <span className="neon-panel absolute right-0 top-full z-[90] mt-2 w-72 p-3.5 shadow-2xl">
+          <span className="block font-tech text-[9px] tracking-[0.28em] uppercase neon-title mb-2">
             Añadir a playlist
+          </span>
+          <span className="mb-3 block text-xs text-bone-dim leading-relaxed">
+            Guarda <strong className="text-bone">{trackTitle}</strong> en una de tus listas personales.
           </span>
           {playlists.length === 0 ? (
             <button
               type="button"
               disabled={busy}
               onClick={createAndAdd}
-              className="w-full px-3 py-2 st-bg text-coal font-display font-bold text-sm"
+              className="neon-btn w-full px-3 py-2.5 font-display font-bold text-sm disabled:opacity-50"
             >
               Crear “Mi playlist” y añadir
             </button>
           ) : (
-            <span className="block space-y-1 max-h-52 overflow-y-auto">
+            <span className="block space-y-1.5 max-h-56 overflow-y-auto pr-1">
               {playlists.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   disabled={busy}
                   onClick={() => addTo(p.id)}
-                  className="block w-full text-left px-3 py-2 border border-inkline text-sm text-bone hover:st-border hover:st-text"
+                  className="neon-panel block w-full text-left px-3 py-2.5 text-sm text-bone hover:brightness-110 disabled:opacity-50"
                 >
-                  {p.name} <span className="text-bone-dim">({p.trackCount ?? 0})</span>
+                  <span className="block font-display font-bold">{p.name}</span>
+                  <span className="font-tech text-[9px] tracking-widest uppercase text-bone-dim">
+                    {p.trackCount ?? 0} canciones
+                  </span>
                 </button>
               ))}
               <button
                 type="button"
                 disabled={busy}
                 onClick={createAndAdd}
-                className="block w-full text-left px-3 py-2 text-xs font-tech uppercase tracking-wider text-bone-dim hover:st-text"
+                className="block w-full text-left px-3 py-2 text-xs font-tech uppercase tracking-[0.24em] neon-muted hover:neon-title disabled:opacity-50"
               >
                 + Crear otra playlist rápida
               </button>
             </span>
           )}
-          {msg && <span className="mt-2 block text-xs text-bone-dim">{msg}</span>}
+          {msg && <span className="mt-3 block text-xs neon-muted">{msg}</span>}
         </span>
       )}
     </span>
