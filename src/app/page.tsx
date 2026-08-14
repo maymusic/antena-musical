@@ -64,7 +64,7 @@ export default async function Home() {
       city: artists.city,
       coverUrl: artists.coverUrl,
       accent: artists.accent,
-      trackCount: sql<number>`(select count(*) from tracks where tracks.artist_id = ${artists.id})`.as("track_count"),
+      trackCount: sql<number>`(select count(*) from tracks where tracks.artist_id = ${artists.id})`.as("trackCount"),
       plays: sql<number>`(select coalesce(sum(plays), 0) from tracks where tracks.artist_id = ${artists.id})`.as("plays"),
       verificationStatus: artists.verificationStatus,
     })

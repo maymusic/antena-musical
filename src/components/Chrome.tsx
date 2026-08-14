@@ -1,19 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { IconAntenna, IconArrowRight } from "./icons";
 
 import { useSession } from "./SessionProvider";
 
 export function TopBar({ solid = false }: { solid?: boolean }) {
   const { session, logout } = useSession();
+  const [open, setOpen] = useState(false);
+
+  const closeMenu = () => setOpen(false);
+
   return (
-    <header
-      className={`sticky top-0 z-[70] border-b border-inkline backdrop-blur-md ${
-        solid ? "bg-coal/95" : "bg-coal/80"
-      }`}
-    >
-      <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-6">
+    <header className="sticky top-0 z-[90] border-b border-inkline bg-coal/95 backdrop-blur-md">
+      <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-3">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 group shrink-0">
           <span className="flex items-center justify-center w-9 h-9 bg-signal text-coal group-hover:rotate-[-6deg] transition-transform">
             <IconAntenna className="w-5 h-5" />
@@ -25,58 +27,78 @@ export function TopBar({ solid = false }: { solid?: boolean }) {
             </span>
           </span>
         </Link>
-        <nav className="hidden md:flex items-center gap-6 ml-6 font-tech text-[11px] tracking-[0.18em] uppercase text-bone-dim">
-          <Link href="/radio" className="flex items-center gap-1.5 text-bone hover:text-signal transition-colors">
+
+        {/* Botón hamburguesa móvil */}
+        <button
+          className="md:hidden ml-auto p-2.5 border border-inkline text-bone-dim hover:text-bone"
+          onClick={() => setOpen(!open)}
+          aria-label="Abrir menú"
+          aria-expanded={open}
+        >
+          {open ? "✕" : "☰"}
+        </button>
+
+        {/* Navegación principal - solo visible cuando open=true en móvil */}
+        <nav
+          className={`
+            ${open ? "flex" : "hidden"} 
+            md:flex 
+            absolute md:static 
+            top-16 left-0 right-0 
+            z-[95] 
+            bg-coal/98 md:bg-transparent 
+            border-b md:border-none border-inkline 
+            md:ml-6 
+            p-4 md:p-0 
+            flex-col md:flex-row 
+            items-stretch md:items-center 
+            gap-1 md:gap-5 
+            text-[14px] md:text-[11px] 
+            tracking-[0.18em] uppercase text-bone-dim font-tech
+          `}
+        >
+          <Link href="/radio" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors flex items-center gap-2 border-b md:border-none border-inkline/30">
             <span className="w-1.5 h-1.5 rounded-full bg-signal animate-blink" /> En vivo
           </Link>
-          <a href="/#estaciones" className="hover:text-signal transition-colors">Estaciones</a>
-          <Link href="/buscar" className="hover:text-signal transition-colors">Buscar</Link>
-          <Link href="/mi-dial" className="hover:text-signal transition-colors">Mi dial</Link>
-          <a href="/#como-funciona" className="hover:text-signal transition-colors">Cómo funciona</a>
+          <a href="/#estaciones" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Estaciones</a>
+          <Link href="/buscar" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Buscar</Link>
+          <Link href="/mi-dial" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors border-b md:border-none border-inkline/30">Mi dial</Link>
+          <a href="/#como-funciona" onClick={closeMenu} className="px-4 py-3 md:py-0 hover:text-signal transition-colors">Cómo funciona</a>
         </nav>
-        {session.logged ? (
-          <div className="ml-auto flex items-center gap-3">
-            {session.role === "admin" && (
-              <Link href="/admin" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 border border-amber/50 text-amber text-sm font-semibold hover:bg-amber hover:text-coal transition-colors">Admin</Link>
-            )}
-            {session.artistSlug ? (
-              <Link
-                href={`/${session.artistSlug}/editar`}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 border border-inkline text-sm font-semibold text-bone hover:st-border hover:st-text transition-colors"
-              >
-                Mi estación
+
+        {/* Botones de la derecha - OCULTOS en móvil cuando el menú está abierto */}
+        <div className={`${open ? "hidden" : "flex"} md:flex ml-auto items-center gap-2 z-[100]`}>
+          {session.logged ? (
+            <>
+              {session.role === "admin" && (
+                <Link href="/admin" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-amber/50 text-amber text-sm font-semibold hover:bg-amber hover:text-coal transition-colors">
+                  Admin
+                </Link>
+              )}
+              {session.artistSlug ? (
+                <Link href={`/${session.artistSlug}/editar`} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-inkline text-sm font-semibold text-bone hover:st-border hover:st-text transition-colors">
+                  Mi estación
+                </Link>
+              ) : (
+                <Link href="/crear" className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-inkline text-sm font-semibold text-bone hover:st-border hover:st-text transition-colors">
+                  Crear estación
+                </Link>
+              )}
+              <button onClick={logout} className="font-tech text-[10px] tracking-[0.2em] uppercase text-bone-dim hover:text-signal transition-colors px-2">
+                Salir
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="hidden sm:block font-tech text-[11px] tracking-[0.18em] uppercase text-bone-dim hover:text-signal transition-colors px-2">
+                Entrar
               </Link>
-            ) : (
-              <Link
-                href="/crear"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 border border-inkline text-sm font-semibold text-bone hover:st-border hover:st-text transition-colors"
-              >
-                Crear estación
+              <Link href="/crear" className="inline-flex items-center gap-2 px-4 py-2 bg-signal text-coal font-display font-bold text-sm hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow">
+                Crear mi estación <IconArrowRight className="w-3.5 h-3.5" />
               </Link>
-            )}
-            <button
-              onClick={logout}
-              className="font-tech text-[10px] tracking-[0.2em] uppercase text-bone-dim hover:text-signal transition-colors"
-            >
-              Salir
-            </button>
-          </div>
-        ) : (
-          <div className="ml-auto flex items-center gap-3">
-            <Link
-              href="/login"
-              className="font-tech text-[11px] tracking-[0.18em] uppercase text-bone-dim hover:text-signal transition-colors"
-            >
-              Entrar
-            </Link>
-            <Link
-              href="/crear"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-signal text-coal font-display font-bold text-sm hover:brightness-110 active:translate-y-0.5 transition-all hard-shadow"
-            >
-              Crear mi estación <IconArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
